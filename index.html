@@ -3,65 +3,332 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的个人网页</title>
+    <title>我的扫雷小游戏</title>
     <style>
-        /* 这里是网页的样式（CSS），负责让它变好看 */
+        /* ====== 基础网页样式 ====== */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f7f6;
             color: #333;
-            line-height: 1.6;
             margin: 0;
             padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
         }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
         .container {
             background-color: #ffffff;
-            max-width: 800px;
-            width: 100%;
-            padding: 40px;
+            padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
+
+        /* ====== 游戏控制面板 ====== */
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
         }
-        .content-box {
-            background-color: #e8f4f8;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
+        select, button {
+            padding: 8px 15px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            background-color: #fff;
+            transition: all 0.2s;
         }
-        ul {
-            padding-left: 20px;
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            font-weight: bold;
         }
+        button:hover { background-color: #2980b9; }
+        .status-bar {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #e74c3c;
+            min-height: 24px;
+        }
+
+        /* ====== 扫雷网格样式 ====== */
+        #game-board {
+            display: grid;
+            gap: 2px;
+            background-color: #bdc3c7;
+            padding: 5px;
+            border-radius: 5px;
+            margin: 0 auto;
+            user-select: none; /* 防止双击选中文本 */
+        }
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: #ecf0f1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 3px;
+            box-shadow: inset 2px 2px 5px rgba(255,255,255,0.7), inset -2px -2px 5px rgba(0,0,0,0.1);
+            transition: background-color 0.1s;
+        }
+        .cell:hover { background-color: #e0e6ed; }
+        
+        /* 已翻开的格子 */
+        .cell.revealed {
+            background-color: #d5dbdb;
+            box-shadow: none;
+            cursor: default;
+        }
+        /* 地雷和旗帜 */
+        .cell.mine { background-color: #e74c3c; color: white; }
+        .cell.flag { color: #e67e22; font-size: 20px; }
+
+        /* 数字颜色 */
+        .cell[data-num="1"] { color: #2980b9; }
+        .cell[data-num="2"] { color: #27ae60; }
+        .cell[data-num="3"] { color: #c0392b; }
+        .cell[data-num="4"] { color: #8e44ad; }
+        .cell[data-num="5"] { color: #d35400; }
+        .cell[data-num="6"] { color: #16a085; }
+        .cell[data-num="7"] { color: #2c3e50; }
+        .cell[data-num="8"] { color: #7f8c8d; }
     </style>
 </head>
 <body>
 
+    <h1>💣 经典扫雷</h1>
+    
     <div class="container">
-        <!-- 这里开始是你网页上能看到的内容 -->
-        <h1>欢迎来到我的网页！</h1>
-        
-        <p>我是贾子岩，我为我自己带盐。目前我正在学习如何编写 HTML 和 CSS。</p>
-
-        <div class="content-box">
-            <h2>📁 文件夹里的内容：</h2>
-            <!-- 这里可以修改成你文件夹里实际有的东西 -->
-            <ul>
-                <li>文件一：我的学习笔记.txt</li>
-                <li>文件二：我的照片.jpg</li>
-                <li>文件三：一些有趣的代码</li>
-            </ul>
+        <div class="controls">
+            <select id="difficulty">
+                <option value="easy">初级 (9x9, 10雷)</option>
+                <option value="medium">中级 (16x16, 40雷)</option>
+                <option value="hard">高级 (16x30, 99雷)</option>
+            </select>
+            <button id="restart-btn">重新开始</button>
         </div>
-
-        <p style="text-align: center; margin-top: 40px; color: #7f8c8d; font-size: 14px;">
-            由 [贾子岩] 制作 © 2026
-        </p>
+        
+        <div class="status-bar" id="status-text">点击任意格子开始游戏</div>
+        
+        <!-- 游戏棋盘 -->
+        <div id="game-board"></div>
     </div>
 
+    <script>
+        // === 游戏核心变量 ===
+        let rows = 9;
+        let cols = 9;
+        let mineCount = 10;
+        
+        let board = []; // 存放地雷数据的二维数组 (0-8表示周围雷数, -1表示雷)
+        let cellElements = []; // 存放DOM元素的二维数组
+        let isGameOver = false;
+        let isFirstClick = true;
+        let flagsPlaced = 0;
+        let revealedCount = 0;
+
+        // === DOM 元素 ===
+        const boardEl = document.getElementById('game-board');
+        const difficultySelect = document.getElementById('difficulty');
+        const restartBtn = document.getElementById('restart-btn');
+        const statusText = document.getElementById('status-text');
+
+        // === 初始化游戏 ===
+        function initGame() {
+            isGameOver = false;
+            isFirstClick = true;
+            flagsPlaced = 0;
+            revealedCount = 0;
+            statusText.textContent = '点击任意格子开始游戏';
+            statusText.style.color = '#e74c3c';
+
+            // 根据难度设置参数
+            const diff = difficultySelect.value;
+            if (diff === 'easy') { rows = 9; cols = 9; mineCount = 10; }
+            else if (diff === 'medium') { rows = 16; cols = 16; mineCount = 40; }
+            else if (diff === 'hard') { rows = 16; cols = 30; mineCount = 99; }
+
+            // 设置网格布局
+            boardEl.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+            boardEl.innerHTML = '';
+
+            // 初始化数据结构
+            board = Array(rows).fill().map(() => Array(cols).fill(0));
+            cellElements = Array(rows).fill().map(() => Array(cols).fill(null));
+
+            // 生成DOM
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    
+                    // 绑定事件
+                    cell.addEventListener('click', () => handleLeftClick(r, c));
+                    cell.addEventListener('contextmenu', (e) => {
+                        e.preventDefault(); // 阻止右键菜单
+                        handleRightClick(r, c);
+                    });
+
+                    boardEl.appendChild(cell);
+                    cellElements[r][c] = cell;
+                }
+            }
+        }
+
+        // === 布置地雷 ===
+        // 第一次点击后才布雷，防止第一次点击直接被炸死
+        function placeMines(firstR, firstC) {
+            let minesPlaced = 0;
+            while (minesPlaced < mineCount) {
+                let r = Math.floor(Math.random() * rows);
+                let c = Math.floor(Math.random() * cols);
+                
+                // 不在第一下点击的位置布雷
+                if (board[r][c] === -1 || (r === firstR && c === firstC)) continue;
+                
+                board[r][c] = -1;
+                minesPlaced++;
+            }
+            calculateNumbers();
+        }
+
+        // === 计算周围数字 ===
+        function calculateNumbers() {
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (board[r][c] === -1) continue; // 如果是雷就跳过
+                    
+                    let count = 0;
+                    // 遍历周围的8个格子
+                    for (let i = -1; i <= 1; i++) {
+                        for (let j = -1; j <= 1; j++) {
+                            let nr = r + i;
+                            let nc = c + j;
+                            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                                if (board[nr][nc] === -1) count++;
+                            }
+                        }
+                    }
+                    board[r][c] = count;
+                }
+            }
+        }
+
+        // === 左键点击（翻开） ===
+        function handleLeftClick(r, c) {
+            if (isGameOver) return;
+            const cell = cellElements[r][c];
+            
+            // 如果已经翻开或者插旗，忽略
+            if (cell.classList.contains('revealed') || cell.classList.contains('flag')) return;
+
+            // 第一次点击，布雷
+            if (isFirstClick) {
+                placeMines(r, c);
+                isFirstClick = false;
+            }
+
+            if (board[r][c] === -1) {
+                // 踩到雷了
+                gameOver(false);
+            } else {
+                revealCell(r, c);
+                checkWin();
+            }
+        }
+
+        // === 递归翻开格子 ===
+        function revealCell(r, c) {
+            if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+            const cell = cellElements[r][c];
+            if (cell.classList.contains('revealed') || cell.classList.contains('flag')) return;
+
+            cell.classList.add('revealed');
+            revealedCount++;
+
+            if (board[r][c] > 0) {
+                cell.textContent = board[r][c];
+                cell.dataset.num = board[r][c];
+            } else {
+                // 如果是空白格，递归展开周围
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        revealCell(r + i, c + j);
+                    }
+                }
+            }
+        }
+
+        // === 右键点击（插旗） ===
+        function handleRightClick(r, c) {
+            if (isGameOver || isFirstClick) return;
+            const cell = cellElements[r][c];
+            if (cell.classList.contains('revealed')) return;
+
+            if (cell.classList.contains('flag')) {
+                cell.classList.remove('flag');
+                cell.textContent = '';
+                flagsPlaced--;
+            } else {
+                cell.classList.add('flag');
+                cell.textContent = '🚩';
+                flagsPlaced++;
+            }
+        }
+
+        // === 检查胜利条件 ===
+        function checkWin() {
+            // 总格子数 - 雷数 = 需要翻开的格子数
+            if (revealedCount === rows * cols - mineCount) {
+                gameOver(true);
+            }
+        }
+
+        // === 游戏结束 ===
+        function gameOver(isWin) {
+            isGameOver = true;
+            
+            // 显示所有雷
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (board[r][c] === -1) {
+                        const cell = cellElements[r][c];
+                        if (!cell.classList.contains('flag')) {
+                            cell.textContent = '💣';
+                            cell.classList.add('mine');
+                        }
+                    }
+                }
+            }
+
+            if (isWin) {
+                statusText.textContent = '🎉 恭喜你，排雷成功！';
+                statusText.style.color = '#27ae60';
+            } else {
+                statusText.textContent = '💥 轰！你踩到雷了...';
+                statusText.style.color = '#e74c3c';
+            }
+        }
+
+        // === 事件监听 ===
+        restartBtn.addEventListener('click', initGame);
+        difficultySelect.addEventListener('change', initGame);
+
+        // 启动游戏
+        initGame();
+    </script>
 </body>
 </html>
