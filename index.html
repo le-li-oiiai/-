@@ -11,54 +11,99 @@
             background-color: #f4f7f6;
             color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        h1 { color: #2c3e50; margin-bottom: 10px; }
-        .container {
+        h1 { color: #2c3e50; margin-bottom: 10px; font-size: 24px; }
+        
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1000px;
+            gap: 20px;
+        }
+
+        .game-panel {
             background-color: #ffffff;
-            padding: 30px;
+            padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             text-align: center;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .rules {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+            background: #fdf2e9;
+            padding: 8px;
+            border-radius: 5px;
+            display: inline-block;
         }
 
         /* ====== 游戏控制面板 ====== */
         .controls {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
         }
         select, button {
-            padding: 8px 15px;
-            font-size: 16px;
+            padding: 8px 12px;
+            font-size: 14px;
             border-radius: 5px;
             border: 1px solid #ccc;
             cursor: pointer;
             background-color: #fff;
             transition: all 0.2s;
         }
-        button {
+        button { background-color: #3498db; color: white; border: none; font-weight: bold; }
+        button:hover { background-color: #2980b9; }
+        
+        /* 移动端模式切换按钮 */
+        .mobile-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .mobile-controls button {
+            background-color: #ecf0f1;
+            color: #333;
+            border: 2px solid transparent;
+            flex: 1;
+            max-width: 120px;
+        }
+        .mobile-controls button.active {
             background-color: #3498db;
             color: white;
-            border: none;
-            font-weight: bold;
+            border-color: #2980b9;
         }
-        button:hover { background-color: #2980b9; }
+
         .status-bar {
-            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
             font-weight: bold;
             margin-bottom: 15px;
             color: #e74c3c;
-            min-height: 24px;
+            padding: 0 10px;
         }
 
         /* ====== 扫雷网格样式 ====== */
+        .board-wrapper {
+            overflow-x: auto; /* 手机端横向滚动 */
+            padding-bottom: 5px;
+        }
         #game-board {
             display: grid;
             gap: 2px;
@@ -66,7 +111,8 @@
             padding: 5px;
             border-radius: 5px;
             margin: 0 auto;
-            user-select: none; /* 防止双击选中文本 */
+            user-select: none;
+            width: fit-content;
         }
         .cell {
             width: 30px;
@@ -84,13 +130,7 @@
         }
         .cell:hover { background-color: #e0e6ed; }
         
-        /* 已翻开的格子 */
-        .cell.revealed {
-            background-color: #d5dbdb;
-            box-shadow: none;
-            cursor: default;
-        }
-        /* 地雷和旗帜 */
+        .cell.revealed { background-color: #d5dbdb; box-shadow: none; cursor: default; }
         .cell.mine { background-color: #e74c3c; color: white; }
         .cell.flag { color: #e67e22; font-size: 20px; }
 
@@ -103,54 +143,119 @@
         .cell[data-num="6"] { color: #16a085; }
         .cell[data-num="7"] { color: #2c3e50; }
         .cell[data-num="8"] { color: #7f8c8d; }
+
+        /* ====== 历史记录样式 ====== */
+        .history-panel {
+            background-color: #ffffff;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .history-panel h3 { margin-top: 0; color: #2c3e50; font-size: 18px; text-align: center; }
+        #history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+        }
+        #history-list li {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        #history-list li:last-child { border-bottom: none; }
+        
+        /* ====== 手机端适配 ====== */
+        @media (max-width: 600px) {
+            .cell { width: 24px; height: 24px; font-size: 14px; }
+            .cell.flag { font-size: 16px; }
+            h1 { font-size: 20px; }
+            .game-panel { padding: 10px; }
+        }
     </style>
 </head>
 <body>
 
     <h1>💣 经典扫雷</h1>
     
-    <div class="container">
-        <div class="controls">
-            <select id="difficulty">
-                <option value="easy">初级 (9x9, 10雷)</option>
-                <option value="medium">中级 (16x16, 40雷)</option>
-                <option value="hard">高级 (16x30, 99雷)</option>
-            </select>
-            <button id="restart-btn">重新开始</button>
+    <div class="main-container">
+        <!-- 游戏主面板 -->
+        <div class="game-panel">
+            <div class="rules">💡 规则说明：左键排雷，右键插旗。手机端请使用下方切换按钮。</div>
+            
+            <!-- 手机端操作选择 -->
+            <div class="mobile-controls">
+                <button id="btn-reveal" class="active">⛏️ 排雷</button>
+                <button id="btn-flag">🚩 插旗</button>
+            </div>
+
+            <div class="controls">
+                <select id="difficulty">
+                    <option value="easy">初级 (9x9, 10雷)</option>
+                    <option value="medium">中级 (16x16, 40雷)</option>
+                    <option value="hard">高级 (16x30, 99雷)</option>
+                </select>
+                <button id="restart-btn">重新开始</button>
+            </div>
+            
+            <div class="status-bar">
+                <span id="status-text">点击格子开始游戏</span>
+                <span>⏱️ <span id="time-display">0</span>s</span>
+            </div>
+            
+            <div class="board-wrapper">
+                <div id="game-board"></div>
+            </div>
         </div>
-        
-        <div class="status-bar" id="status-text">点击任意格子开始游戏</div>
-        
-        <!-- 游戏棋盘 -->
-        <div id="game-board"></div>
+
+        <!-- 历史记录面板 -->
+        <div class="history-panel">
+            <h3>📜 本次打开记录</h3>
+            <ul id="history-list">
+                <li style="color:#999; justify-content:center;">暂无记录，开始你的第一局吧</li>
+            </ul>
+        </div>
     </div>
 
     <script>
         // === 游戏核心变量 ===
-        let rows = 9;
-        let cols = 9;
-        let mineCount = 10;
+        let rows = 9, cols = 9, mineCount = 10;
+        let board = [], cellElements = [];
+        let isGameOver = false, isFirstClick = true, revealedCount = 0, flagsPlaced = 0;
         
-        let board = []; // 存放地雷数据的二维数组 (0-8表示周围雷数, -1表示雷)
-        let cellElements = []; // 存放DOM元素的二维数组
-        let isGameOver = false;
-        let isFirstClick = true;
-        let flagsPlaced = 0;
-        let revealedCount = 0;
+        // 计时器相关
+        let timerInterval = null;
+        let timeElapsed = 0;
+        
+        // 模式控制（手机端）
+        let currentMode = 'reveal'; // 'reveal' 或 'flag'
 
-        // === DOM 元素 ===
+        // 历史记录
+        let gameHistory = [];
+
+        // DOM 元素
         const boardEl = document.getElementById('game-board');
         const difficultySelect = document.getElementById('difficulty');
         const restartBtn = document.getElementById('restart-btn');
         const statusText = document.getElementById('status-text');
+        const timeDisplay = document.getElementById('time-display');
+        const historyList = document.getElementById('history-list');
+        const btnReveal = document.getElementById('btn-reveal');
+        const btnFlag = document.getElementById('btn-flag');
 
         // === 初始化游戏 ===
         function initGame() {
             isGameOver = false;
             isFirstClick = true;
-            flagsPlaced = 0;
             revealedCount = 0;
-            statusText.textContent = '点击任意格子开始游戏';
+            flagsPlaced = 0;
+            stopTimer();
+            timeElapsed = 0;
+            timeDisplay.textContent = 0;
+            statusText.textContent = '点击格子开始游戏';
             statusText.style.color = '#e74c3c';
 
             // 根据难度设置参数
@@ -160,26 +265,27 @@
             else if (diff === 'hard') { rows = 16; cols = 30; mineCount = 99; }
 
             // 设置网格布局
-            boardEl.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+            boardEl.style.gridTemplateColumns = `repeat(${cols}, ${window.innerWidth < 600 ? '24px' : '30px'})`;
             boardEl.innerHTML = '';
 
-            // 初始化数据结构
             board = Array(rows).fill().map(() => Array(cols).fill(0));
             cellElements = Array(rows).fill().map(() => Array(cols).fill(null));
 
-            // 生成DOM
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const cell = document.createElement('div');
                     cell.classList.add('cell');
-                    cell.dataset.r = r;
-                    cell.dataset.c = c;
                     
-                    // 绑定事件
-                    cell.addEventListener('click', () => handleLeftClick(r, c));
+                    // 统一点击事件（处理左键和手机端默认点击）
+                    cell.addEventListener('click', () => {
+                        if (currentMode === 'reveal') handleReveal(r, c);
+                        else handleFlag(r, c);
+                    });
+                    
+                    // 右键事件（始终为插旗）
                     cell.addEventListener('contextmenu', (e) => {
-                        e.preventDefault(); // 阻止右键菜单
-                        handleRightClick(r, c);
+                        e.preventDefault();
+                        handleFlag(r, c);
                     });
 
                     boardEl.appendChild(cell);
@@ -188,38 +294,99 @@
             }
         }
 
+        // === 计时器 ===
+        function startTimer() {
+            stopTimer();
+            timeElapsed = 0;
+            timeDisplay.textContent = timeElapsed;
+            timerInterval = setInterval(() => {
+                timeElapsed++;
+                timeDisplay.textContent = timeElapsed;
+            }, 1000);
+        }
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+        }
+
         // === 布置地雷 ===
-        // 第一次点击后才布雷，防止第一次点击直接被炸死
         function placeMines(firstR, firstC) {
+            // 彩蛋：如果是高级难度，布置四叶草形状
+            if (difficultySelect.value === 'hard') {
+                placeCloverMines(firstR, firstC);
+                calculateNumbers();
+                return;
+            }
+
+            // 正常随机布雷
             let minesPlaced = 0;
             while (minesPlaced < mineCount) {
                 let r = Math.floor(Math.random() * rows);
                 let c = Math.floor(Math.random() * cols);
-                
-                // 不在第一下点击的位置布雷
                 if (board[r][c] === -1 || (r === firstR && c === firstC)) continue;
-                
                 board[r][c] = -1;
                 minesPlaced++;
             }
             calculateNumbers();
         }
 
+        // 四叶草布雷算法
+        function placeCloverMines(firstR, firstC) {
+            // 计算四叶草形状的坐标 (刚好99个雷，填满一片叶子)
+            let targetMines = [];
+            
+            // 四个叶子的圆心
+            const centers = [
+                {r: 4, c: 11}, {r: 4, c: 18}, 
+                {r: 11, c: 11}, {r: 11, c: 18}
+            ];
+            const R = 3.8; // 叶子半径
+
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    if (r === firstR && c === firstC) continue; // 防暴毙点排除
+
+                    let isMine = false;
+                    // 检查是否在叶子内
+                    for(let center of centers) {
+                        if (Math.pow(r - center.r, 2) + Math.pow(c - center.c, 2) <= Math.pow(R, 2)) {
+                            isMine = true;
+                            break;
+                        }
+                    }
+                    // 加上草茎
+                    if ((c === 14 || c === 15) && r >= 11 && r <= 15) {
+                        isMine = true;
+                    }
+
+                    if (isMine) targetMines.push({r, c});
+                }
+            }
+
+            // 如果生成的雷不够 99 个，随机在空白处补齐
+            while(targetMines.length < 99) {
+                let r = Math.floor(Math.random() * rows);
+                let c = Math.floor(Math.random() * cols);
+                if (board[r][c] !== -1 && !(r === firstR && c === firstC) && !targetMines.find(m => m.r === r && m.c === c)) {
+                    targetMines.push({r, c});
+                }
+            }
+            // 如果超过 99 个（一般不会），随机削减
+            targetMines = targetMines.slice(0, 99);
+
+            // 应用到棋盘
+            targetMines.forEach(m => { board[m.r][m.c] = -1; });
+        }
+
         // === 计算周围数字 ===
         function calculateNumbers() {
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    if (board[r][c] === -1) continue; // 如果是雷就跳过
-                    
+                    if (board[r][c] === -1) continue;
                     let count = 0;
-                    // 遍历周围的8个格子
                     for (let i = -1; i <= 1; i++) {
                         for (let j = -1; j <= 1; j++) {
-                            let nr = r + i;
-                            let nc = c + j;
-                            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-                                if (board[nr][nc] === -1) count++;
-                            }
+                            let nr = r + i, nc = c + j;
+                            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc] === -1) count++;
                         }
                     }
                     board[r][c] = count;
@@ -227,22 +394,22 @@
             }
         }
 
-        // === 左键点击（翻开） ===
-        function handleLeftClick(r, c) {
+        // === 排雷操作 ===
+        function handleReveal(r, c) {
             if (isGameOver) return;
             const cell = cellElements[r][c];
             
-            // 如果已经翻开或者插旗，忽略
             if (cell.classList.contains('revealed') || cell.classList.contains('flag')) return;
 
-            // 第一次点击，布雷
             if (isFirstClick) {
                 placeMines(r, c);
                 isFirstClick = false;
+                startTimer();
+                statusText.textContent = '游戏进行中...';
+                statusText.style.color = '#3498db';
             }
 
             if (board[r][c] === -1) {
-                // 踩到雷了
                 gameOver(false);
             } else {
                 revealCell(r, c);
@@ -250,7 +417,24 @@
             }
         }
 
-        // === 递归翻开格子 ===
+        // === 插旗操作 ===
+        function handleFlag(r, c) {
+            if (isGameOver || isFirstClick) return;
+            const cell = cellElements[r][c];
+            if (cell.classList.contains('revealed')) return;
+
+            if (cell.classList.contains('flag')) {
+                cell.classList.remove('flag');
+                cell.textContent = '';
+                flagsPlaced--;
+            } else {
+                // 可选限制插旗数量，这里不限制，随便插
+                cell.classList.add('flag');
+                cell.textContent = '🚩';
+                flagsPlaced++;
+            }
+        }
+
         function revealCell(r, c) {
             if (r < 0 || r >= rows || c < 0 || c >= cols) return;
             const cell = cellElements[r][c];
@@ -263,7 +447,6 @@
                 cell.textContent = board[r][c];
                 cell.dataset.num = board[r][c];
             } else {
-                // 如果是空白格，递归展开周围
                 for (let i = -1; i <= 1; i++) {
                     for (let j = -1; j <= 1; j++) {
                         revealCell(r + i, c + j);
@@ -272,26 +455,7 @@
             }
         }
 
-        // === 右键点击（插旗） ===
-        function handleRightClick(r, c) {
-            if (isGameOver || isFirstClick) return;
-            const cell = cellElements[r][c];
-            if (cell.classList.contains('revealed')) return;
-
-            if (cell.classList.contains('flag')) {
-                cell.classList.remove('flag');
-                cell.textContent = '';
-                flagsPlaced--;
-            } else {
-                cell.classList.add('flag');
-                cell.textContent = '🚩';
-                flagsPlaced++;
-            }
-        }
-
-        // === 检查胜利条件 ===
         function checkWin() {
-            // 总格子数 - 雷数 = 需要翻开的格子数
             if (revealedCount === rows * cols - mineCount) {
                 gameOver(true);
             }
@@ -300,8 +464,8 @@
         // === 游戏结束 ===
         function gameOver(isWin) {
             isGameOver = true;
-            
-            // 显示所有雷
+            stopTimer();
+
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     if (board[r][c] === -1) {
@@ -314,16 +478,55 @@
                 }
             }
 
+            let diffName = difficultySelect.options[difficultySelect.selectedIndex].text.split(' ')[0];
+            
             if (isWin) {
                 statusText.textContent = '🎉 恭喜你，排雷成功！';
                 statusText.style.color = '#27ae60';
+                addHistory(`✅ ${diffName}胜利`, timeElapsed);
+                if(difficultySelect.value === 'hard') {
+                    setTimeout(() => alert("🍀 你发现了彩蛋！这局的高级雷区其实是一株巨大的四叶草！"), 100);
+                }
             } else {
                 statusText.textContent = '💥 轰！你踩到雷了...';
                 statusText.style.color = '#e74c3c';
+                addHistory(`💀 ${diffName}失败`, timeElapsed);
             }
         }
 
-        // === 事件监听 ===
+        // === 历史记录模块 ===
+        function addHistory(resultStr, time) {
+            gameHistory.unshift({ resultStr, time });
+            if (gameHistory.length > 5) gameHistory.pop(); // 最多显示5条
+            renderHistory();
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            if (gameHistory.length === 0) {
+                historyList.innerHTML = '<li style="color:#999; justify-content:center;">暂无记录</li>';
+                return;
+            }
+            gameHistory.forEach(record => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${record.resultStr}</span> <span>⏱️ ${record.time} 秒</span>`;
+                historyList.appendChild(li);
+            });
+        }
+
+        // === 模式切换事件 ===
+        btnReveal.addEventListener('click', () => {
+            currentMode = 'reveal';
+            btnReveal.classList.add('active');
+            btnFlag.classList.remove('active');
+        });
+        btnFlag.addEventListener('click', () => {
+            currentMode = 'flag';
+            btnFlag.classList.add('active');
+            btnReveal.classList.remove('active');
+        });
+
+        // === 其他事件 ===
         restartBtn.addEventListener('click', initGame);
         difficultySelect.addEventListener('change', initGame);
 
