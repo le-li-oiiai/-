@@ -88,6 +88,21 @@
             border-color: #2980b9;
         }
 
+        /* ====== 数据统计面板 ====== */
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .stat-item { display: flex; align-items: center; gap: 5px; }
+        .stat-value { color: #e74c3c; font-size: 18px; }
+        .stat-value.safe { color: #27ae60; }
+
         .status-bar {
             display: flex;
             justify-content: space-between;
@@ -95,7 +110,7 @@
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 15px;
-            color: #e74c3c;
+            color: #3498db;
             padding: 0 10px;
         }
 
@@ -144,6 +159,14 @@
         .cell[data-num="7"] { color: #2c3e50; }
         .cell[data-num="8"] { color: #7f8c8d; }
 
+        /* 彩蛋动画样式 */
+        .cell.egg-animate {
+            background-color: #f1c40f;
+            box-shadow: 0 0 10px #f1c40f;
+            transform: scale(1.1);
+            transition: all 0.3s ease;
+        }
+
         /* ====== 历史记录样式 ====== */
         .history-panel {
             background-color: #ffffff;
@@ -174,6 +197,7 @@
             .cell.flag { font-size: 16px; }
             h1 { font-size: 20px; }
             .game-panel { padding: 10px; }
+            .stats-bar { font-size: 13px; flex-direction: column; gap: 5px; align-items: flex-start; }
         }
     </style>
 </head>
@@ -184,7 +208,7 @@
     <div class="main-container">
         <!-- 游戏主面板 -->
         <div class="game-panel">
-            <div class="rules">💡 规则说明：左键排雷，右键插旗。手机端请使用下方切换按钮。</div>
+            <div class="rules">💡 规则：左键排雷，右键插旗。手机端请使用下方切换按钮。</div>
             
             <!-- 手机端操作选择 -->
             <div class="mobile-controls">
@@ -201,6 +225,12 @@
                 <button id="restart-btn">重新开始</button>
             </div>
             
+            <!-- 新增：数据统计面板 -->
+            <div class="stats-bar">
+                <div class="stat-item">🚩 当前插旗: <span id="stat-flags" class="stat-value">0</span></div>
+                <div class="stat-item">🔍 未翻开格: <span id="stat-safe" class="stat-value safe">0</span></div>
+            </div>
+
             <div class="status-bar">
                 <span id="status-text">点击格子开始游戏</span>
                 <span>⏱️ <span id="time-display">0</span>s</span>
@@ -245,6 +275,8 @@
         const historyList = document.getElementById('history-list');
         const btnReveal = document.getElementById('btn-reveal');
         const btnFlag = document.getElementById('btn-flag');
+        const statFlags = document.getElementById('stat-flags');
+        const statSafe = document.getElementById('stat-safe');
 
         // === 初始化游戏 ===
         function initGame() {
@@ -256,7 +288,7 @@
             timeElapsed = 0;
             timeDisplay.textContent = 0;
             statusText.textContent = '点击格子开始游戏';
-            statusText.style.color = '#e74c3c';
+            statusText.style.color = '#3498db';
 
             // 根据难度设置参数
             const diff = difficultySelect.value;
@@ -292,6 +324,7 @@
                     cellElements[r][c] = cell;
                 }
             }
+            updateStats();
         }
 
         // === 计时器 ===
@@ -308,16 +341,16 @@
             if (timerInterval) clearInterval(timerInterval);
         }
 
-        // === 布置地雷 ===
-        function placeMines(firstR, firstC) {
-            // 彩蛋：如果是高级难度，布置四叶草形状
-            if (difficultySelect.value === 'hard') {
-                placeCloverMines(firstR, firstC);
-                calculateNumbers();
-                return;
-            }
+        // === 更新数据统计 ===
+        function updateStats() {
+            statFlags.textContent = flagsPlaced;
+            // 未翻开的格子总数 = 总格子数 - 已经翻开的格子数
+            let unopenedCount = (rows * cols) - revealedCount;
+            statSafe.textContent = unopenedCount;
+        }
 
-            // 正常随机布雷
+        // === 布置地雷 (完全随机，回归最经典的玩法) ===
+        function placeMines(firstR, firstC) {
             let minesPlaced = 0;
             while (minesPlaced < mineCount) {
                 let r = Math.floor(Math.random() * rows);
@@ -327,54 +360,6 @@
                 minesPlaced++;
             }
             calculateNumbers();
-        }
-
-        // 四叶草布雷算法
-        function placeCloverMines(firstR, firstC) {
-            // 计算四叶草形状的坐标 (刚好99个雷，填满一片叶子)
-            let targetMines = [];
-            
-            // 四个叶子的圆心
-            const centers = [
-                {r: 4, c: 11}, {r: 4, c: 18}, 
-                {r: 11, c: 11}, {r: 11, c: 18}
-            ];
-            const R = 3.8; // 叶子半径
-
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    if (r === firstR && c === firstC) continue; // 防暴毙点排除
-
-                    let isMine = false;
-                    // 检查是否在叶子内
-                    for(let center of centers) {
-                        if (Math.pow(r - center.r, 2) + Math.pow(c - center.c, 2) <= Math.pow(R, 2)) {
-                            isMine = true;
-                            break;
-                        }
-                    }
-                    // 加上草茎
-                    if ((c === 14 || c === 15) && r >= 11 && r <= 15) {
-                        isMine = true;
-                    }
-
-                    if (isMine) targetMines.push({r, c});
-                }
-            }
-
-            // 如果生成的雷不够 99 个，随机在空白处补齐
-            while(targetMines.length < 99) {
-                let r = Math.floor(Math.random() * rows);
-                let c = Math.floor(Math.random() * cols);
-                if (board[r][c] !== -1 && !(r === firstR && c === firstC) && !targetMines.find(m => m.r === r && m.c === c)) {
-                    targetMines.push({r, c});
-                }
-            }
-            // 如果超过 99 个（一般不会），随机削减
-            targetMines = targetMines.slice(0, 99);
-
-            // 应用到棋盘
-            targetMines.forEach(m => { board[m.r][m.c] = -1; });
         }
 
         // === 计算周围数字 ===
@@ -406,7 +391,6 @@
                 isFirstClick = false;
                 startTimer();
                 statusText.textContent = '游戏进行中...';
-                statusText.style.color = '#3498db';
             }
 
             if (board[r][c] === -1) {
@@ -415,6 +399,7 @@
                 revealCell(r, c);
                 checkWin();
             }
+            updateStats();
         }
 
         // === 插旗操作 ===
@@ -428,11 +413,11 @@
                 cell.textContent = '';
                 flagsPlaced--;
             } else {
-                // 可选限制插旗数量，这里不限制，随便插
                 cell.classList.add('flag');
                 cell.textContent = '🚩';
                 flagsPlaced++;
             }
+            updateStats();
         }
 
         function revealCell(r, c) {
@@ -466,32 +451,88 @@
             isGameOver = true;
             stopTimer();
 
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (board[r][c] === -1) {
-                        const cell = cellElements[r][c];
-                        if (!cell.classList.contains('flag')) {
-                            cell.textContent = '💣';
-                            cell.classList.add('mine');
-                        }
-                    }
-                }
-            }
-
             let diffName = difficultySelect.options[difficultySelect.selectedIndex].text.split(' ')[0];
             
             if (isWin) {
                 statusText.textContent = '🎉 恭喜你，排雷成功！';
                 statusText.style.color = '#27ae60';
                 addHistory(`✅ ${diffName}胜利`, timeElapsed);
-                if(difficultySelect.value === 'hard') {
-                    setTimeout(() => alert("🍀 你发现了彩蛋！这局的高级雷区其实是一株巨大的四叶草！"), 100);
+                
+                // 🌟 高级难度专属彩蛋触发 🌟
+                if (difficultySelect.value === 'hard') {
+                    triggerHiEgg();
                 }
             } else {
+                // 失败时正常显示所有地雷
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (board[r][c] === -1) {
+                            const cell = cellElements[r][c];
+                            if (!cell.classList.contains('flag')) {
+                                cell.textContent = '💣';
+                                cell.classList.add('mine');
+                            }
+                        }
+                    }
+                }
                 statusText.textContent = '💥 轰！你踩到雷了...';
                 statusText.style.color = '#e74c3c';
                 addHistory(`💀 ${diffName}失败`, timeElapsed);
             }
+        }
+
+        // === 🍀 彩蛋：通关最高难度，绘制 Hi ===
+        function triggerHiEgg() {
+            // 等待 0.5 秒，让玩家先看到通关提示
+            setTimeout(() => {
+                statusText.textContent = '✨ 发现隐藏彩蛋！';
+                statusText.style.color = '#d35400';
+
+                // 1. 清空所有格子的状态
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        let cell = cellElements[r][c];
+                        cell.className = 'cell'; // 清空class
+                        cell.textContent = '';   // 清空内容
+                    }
+                }
+
+                // 2. 定义 "Hi" 的图案坐标 (基于 16行 x 30列)
+                // 我们可以用一个二维数组来画图，这是最直观的。
+                const pattern = [
+                    "..............................", // 0
+                    "..............................", // 1
+                    "..............................", // 2
+                    "....##........#...............", // 3
+                    "....##........#...............", // 4
+                    "....##........#...............", // 5
+                    "....##........#...............", // 6
+                    "....##############............", // 7 (横杠)
+                    "....##############............", // 8 (横杠)
+                    "....##........#...............", // 9
+                    "....##........#...............", // 10
+                    "....##........#...............", // 11
+                    "....##........#...............", // 12
+                    "....##........#...............", // 13
+                    "..............................", // 14
+                    ".............................."  // 15
+                ];
+
+                // 3. 将图案映射到格子上，并增加逐个出现的动画效果
+                let delay = 0;
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (pattern[r] && pattern[r][c] === '#') {
+                            setTimeout(() => {
+                                let cell = cellElements[r][c];
+                                cell.textContent = '💣';
+                                cell.classList.add('egg-animate');
+                            }, delay);
+                            delay += 15; // 每个格子延迟 15 毫秒出现，形成扫描效果
+                        }
+                    }
+                }
+            }, 600);
         }
 
         // === 历史记录模块 ===
