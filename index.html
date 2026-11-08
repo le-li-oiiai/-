@@ -3,88 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的游戏大厅</title>
+    <title>我的游戏</title>
     <style>
         /* ====== 全局及大厅样式 ====== */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a2e;
-            color: #e0e0e0;
+            background-color: #ffffff; /* 纯白背景 */
+            color: #333;
             margin: 0;
-            padding: 15px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
         }
-        h1 { color: #e94560; margin-bottom: 20px; text-shadow: 0 0 10px rgba(233, 69, 96, 0.5); }
 
-        .screen { display: none; width: 100%; flex-direction: column; align-items: center; }
+        .screen { display: none; width: 100%; flex-direction: column; align-items: center; min-height: 100vh; }
         .screen.active { display: flex; }
 
         /* ====== 主菜单 ====== */
-        .menu-buttons { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 50px; }
+        #screen-menu {
+            justify-content: center; /* 选项居中 */
+        }
+        .menu-buttons { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
         .menu-btn {
-            background-color: #0f3460;
-            border: 2px solid #e94560;
-            color: white;
-            padding: 20px 40px;
-            font-size: 20px;
-            border-radius: 10px;
+            background-color: #ffffff;
+            border: 2px solid #3498db;
+            color: #3498db;
+            padding: 20px 50px;
+            font-size: 22px;
+            border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(233, 69, 96, 0.2);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
         }
-        .menu-btn:hover { background-color: #e94560; transform: translateY(-5px); }
-        .back-btn { background: none; border: 1px solid #7f8c8d; color: #7f8c8d; padding: 5px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
-        .back-btn:hover { color: white; border-color: white; }
+        .menu-btn:hover { 
+            background-color: #3498db; 
+            color: white;
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+        }
 
-        /* ====== 扫雷原有样式 (微调背景) ====== */
-        .game-panel { background-color: #16213e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; max-width: 100%; overflow: hidden; }
-        .rules { font-size: 14px; color: #a0a0a0; margin-bottom: 15px; background: #0f3460; padding: 8px; border-radius: 5px; display: inline-block; }
+        .back-btn { 
+            background: none; border: 1px solid #bdc3c7; color: #7f8c8d; 
+            padding: 8px 20px; border-radius: 20px; cursor: pointer; 
+            margin-top: 20px; transition: 0.2s;
+        }
+        .back-btn:hover { color: #333; border-color: #333; }
+
+        /* ====== 扫雷游戏样式 ====== */
+        .game-panel { background-color: #f8f9fa; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; max-width: 100%; overflow: hidden; border: 1px solid #eee; margin-top: 20px;}
+        .rules { font-size: 14px; color: #7f8c8d; margin-bottom: 15px; background: #eef2f5; padding: 8px; border-radius: 5px; display: inline-block; }
         .controls, .mobile-controls { margin-bottom: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        select, button { padding: 8px 12px; font-size: 14px; border-radius: 5px; border: none; cursor: pointer; background-color: #0f3460; color: white; transition: all 0.2s; }
-        button:hover { background-color: #e94560; }
-        .mobile-controls button { background-color: #2a2a4a; border: 2px solid transparent; flex: 1; max-width: 120px; }
-        .mobile-controls button.active { background-color: #e94560; border-color: #ff7b9c; }
-        .stats-bar { display: flex; justify-content: space-around; background-color: #0f3460; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 15px; }
-        .stat-value { color: #e94560; font-size: 18px; }
+        select, button { padding: 8px 12px; font-size: 14px; border-radius: 5px; border: none; cursor: pointer; background-color: #ecf0f1; color: #333; transition: all 0.2s; border: 1px solid #ccc;}
+        button:hover { background-color: #3498db; color: white; border-color: #3498db;}
+        .mobile-controls button { background-color: #fff; border: 2px solid #ddd; flex: 1; max-width: 120px; }
+        .mobile-controls button.active { background-color: #3498db; color: white; border-color: #2980b9; }
+        .stats-bar { display: flex; justify-content: space-around; background-color: #eef2f5; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 15px; }
+        .stat-value { color: #e74c3c; font-size: 18px; }
         .status-bar { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #3498db; padding: 0 10px; }
         .board-wrapper { overflow-x: auto; padding-bottom: 5px; }
-        #game-board { display: grid; gap: 2px; background-color: #0a0a15; padding: 5px; border-radius: 5px; margin: 0 auto; user-select: none; width: fit-content; }
-        .cell { width: 30px; height: 30px; background-color: #1e3b70; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 3px; box-shadow: inset 2px 2px 5px rgba(255,255,255,0.1), inset -2px -2px 5px rgba(0,0,0,0.3); }
-        .cell:hover { background-color: #2a4a8a; }
-        .cell.revealed { background-color: #16213e; box-shadow: none; cursor: default; }
+        #game-board { display: grid; gap: 2px; background-color: #bdc3c7; padding: 5px; border-radius: 5px; margin: 0 auto; user-select: none; width: fit-content; }
+        .cell { width: 30px; height: 30px; background-color: #ecf0f1; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 3px; box-shadow: inset 2px 2px 5px rgba(255,255,255,0.7), inset -2px -2px 5px rgba(0,0,0,0.1); }
+        .cell:hover { background-color: #e0e6ed; }
+        .cell.revealed { background-color: #d5dbdb; box-shadow: none; cursor: default; }
         .cell.mine { background-color: #e94560; color: white; }
-        .cell.flag { color: #f1c40f; font-size: 20px; }
-        .cell[data-num="1"] { color: #3498db; } .cell[data-num="2"] { color: #2ecc71; } .cell[data-num="3"] { color: #e74c3c; } .cell[data-num="4"] { color: #9b59b6; } .cell[data-num="5"] { color: #e67e22; } .cell[data-num="6"] { color: #1abc9c; } .cell[data-num="7"] { color: #ecf0f1; } .cell[data-num="8"] { color: #95a5a6; }
+        .cell.flag { color: #e67e22; font-size: 20px; }
+        .cell[data-num="1"] { color: #2980b9; } .cell[data-num="2"] { color: #27ae60; } .cell[data-num="3"] { color: #c0392b; } .cell[data-num="4"] { color: #8e44ad; } .cell[data-num="5"] { color: #d35400; } .cell[data-num="6"] { color: #16a085; } .cell[data-num="7"] { color: #2c3e50; } .cell[data-num="8"] { color: #7f8c8d; }
         .cell.egg-animate { background-color: #f1c40f; box-shadow: 0 0 10px #f1c40f; transform: scale(1.1); transition: all 0.3s ease; }
-        .history-panel { background-color: #16213e; padding: 15px 20px; border-radius: 10px; margin-top: 20px; width: 100%; max-width: 400px; }
+        .history-panel { background-color: #f8f9fa; padding: 15px 20px; border-radius: 10px; margin-top: 20px; width: 100%; max-width: 400px; border: 1px solid #eee;}
         #history-list { list-style: none; padding: 0; margin: 0; font-size: 14px; }
-        #history-list li { padding: 8px; border-bottom: 1px solid #0f3460; display: flex; justify-content: space-between; }
+        #history-list li { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
 
         /* ====== 星轨穿梭 (Orbit) 样式 ====== */
-        .orbit-container { position: relative; width: 100%; max-width: 1000px; background-color: #0a0a15; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(52, 152, 219, 0.2); display: flex; flex-direction: column; align-items: center; }
-        canvas { display: block; width: 100%; height: 600px; cursor: crosshair; }
-        .orbit-ui { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
-        .orbit-score { color: #fff; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; font-weight: bold; }
-        .jump-hint { color: #e94560; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px #e94560; animation: pulse 1.5s infinite; opacity: 0; transition: opacity 0.3s; }
+        #screen-orbit { position: relative; width: 100%; height: 100vh; overflow: hidden; }
+        .orbit-container { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+        
+        .orbit-ui { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; }
+        .orbit-score { color: #333; background: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: 20px; font-weight: bold; border: 1px solid #eee; box-shadow: 0 2px 10px rgba(0,0,0,0.05);}
+        .jump-hint { 
+            color: #e74c3c; font-size: 24px; font-weight: bold; 
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+            animation: pulse 1.5s infinite; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
         .jump-hint.show { opacity: 1; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        .mobile-jump-btn { display: none; position: absolute; bottom: 20px; right: 20px; width: 80px; height: 80px; border-radius: 50%; background-color: rgba(233, 69, 96, 0.8); color: white; font-size: 16px; border: none; box-shadow: 0 0 20px rgba(233, 69, 96, 0.5); pointer-events: auto; user-select: none; }
+        @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.05); } 100% { transform: translateX(-50%) scale(1); } }
+        
+        .mobile-jump-btn { 
+            display: none; position: absolute; bottom: 40px; right: 40px; 
+            width: 90px; height: 90px; border-radius: 50%; 
+            background-color: rgba(52, 152, 219, 0.9); color: white; 
+            font-size: 18px; font-weight: bold; border: none; 
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4); 
+            pointer-events: auto; user-select: none; z-index: 10;
+        }
+        
+        .orbit-back-btn {
+            position: absolute; top: 20px; right: 20px; z-index: 10;
+            padding: 8px 15px; border-radius: 20px; background: rgba(255,255,255,0.9);
+            border: 1px solid #ccc; color: #666; cursor: pointer;
+        }
+
         @media (max-width: 600px) {
             .cell { width: 24px; height: 24px; font-size: 14px; }
             .cell.flag { font-size: 16px; }
             .stats-bar { font-size: 13px; flex-direction: column; gap: 5px; }
             .mobile-jump-btn { display: block; }
-            canvas { height: 500px; }
+            .menu-btn { padding: 15px 30px; font-size: 18px; width: 80%; }
         }
     </style>
 </head>
 <body>
-
-    <h1 id="page-title">🎮 游戏大厅</h1>
 
     <!-- 1. 主菜单 -->
     <div id="screen-menu" class="screen active">
@@ -129,17 +160,16 @@
 
     <!-- 3. 星轨穿梭游戏 -->
     <div id="screen-orbit" class="screen">
-        <button class="back-btn" onclick="switchGame('menu')">← 返回大厅</button>
         <div class="orbit-container">
             <canvas id="orbit-canvas"></canvas>
+            
             <div class="orbit-ui">
                 <div class="orbit-score">进度: <span id="orbit-progress">0 / 0</span></div>
-                <div class="jump-hint" id="jump-hint">按 空格 键脱离轨道！</div>
             </div>
+            <button class="orbit-back-btn" onclick="switchGame('menu')">返回大厅</button>
+            
+            <div class="jump-hint" id="jump-hint">按 空格 或 点击屏幕 脱离轨道！</div>
             <button class="mobile-jump-btn" id="mobile-jump">跳跃</button>
-        </div>
-        <div style="margin-top: 15px; color: #7f8c8d; text-align: center; max-width: 600px;">
-            🚀 <b>玩法：</b>小球被无形丝线拴在圆圈上旋转（红顺蓝逆）。按下<b>空格键</b>（或点击跳跃按钮）切断丝线，小球会沿切线飞出。受重力影响，在合适的时机飞出，碰到其他圈会自动吸附并调整速度。到达最后一个绿圈即可获胜！
         </div>
     </div>
 
@@ -154,22 +184,19 @@
             currentGame = gameName;
 
             if (gameName === 'menu') {
-                document.getElementById('page-title').innerText = '🎮 游戏大厅';
                 document.getElementById('screen-menu').classList.add('active');
                 stopOrbitGame();
             } else if (gameName === 'minesweeper') {
-                document.getElementById('page-title').innerText = '💣 经典扫雷';
                 document.getElementById('screen-minesweeper').classList.add('active');
-                initGame(); // 初始化扫雷
+                initGame();
             } else if (gameName === 'orbit') {
-                document.getElementById('page-title').innerText = '🪐 星轨穿梭';
                 document.getElementById('screen-orbit').classList.add('active');
-                initOrbitGame(); // 初始化星轨
+                initOrbitGame();
             }
         }
 
         // ==========================================
-        // 💣 扫雷游戏逻辑 (之前的部分)
+        // 💣 扫雷游戏逻辑
         // ==========================================
         let rows = 9, cols = 9, mineCount = 10;
         let board = [], cellElements = [];
@@ -351,58 +378,63 @@
         let orbitAnimId;
         let circles = [];
         let ball = { x: 0, y: 0, vx: 0, vy: 0, radius: 8, attachedIdx: -1, angle: 0, isAttached: true };
-        let orbitGravity = 800; // 重力加速度 (px/s^2)
+        
+        // 物理参数优化：降低重力，增加跳跃速度，手感更好
+        let orbitGravity = 400; 
+        let jumpSpeedMultiplier = 1.6; 
+        
         let orbitState = 'playing'; // playing, won, lost
         let lastTime = 0;
-        let orbitSpeedMultiplier = 1; // 用于调试
+        
+        // 镜头坐标
+        let camX = 0;
+        let camY = 0;
 
-        // 窗口自适应
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width;
-            canvas.height = rect.height || 600;
+            canvas.height = rect.height || window.innerHeight;
         }
         window.addEventListener('resize', resizeCanvas);
 
-        // 初始化关卡
         function initOrbitGame() {
             cancelAnimationFrame(orbitAnimId);
             resizeCanvas();
             orbitState = 'playing';
             circles = [];
             
-            // 构造一条波浪形向下的路径
-            let startX = 100;
-            let startY = 100;
-            let numCircles = 6; // 圈的数量
-            let minR = 40, maxR = 80;
+            let numCircles = 15; // 生成足够多的圈，因为会有镜头移动
+            circles.push({x: 0, y: 0, r: 50, color: 'start'}); // 起点圆心在 (0,0)
 
-            for (let i = 0; i < numCircles; i++) {
-                let r = Math.random() * (maxR - minR) + minR;
+            // 生成不重叠且距离适中的路径
+            for (let i = 1; i < numCircles; i++) {
+                let r = Math.random() * 30 + 40; // 半径 40~70
                 let x, y;
-                
-                if (i === 0) {
-                    x = startX; y = startY;
-                } else if (i === numCircles - 1) {
-                    // 最后一个圈（终点）放在右下
-                    x = canvas.width - 150;
-                    y = canvas.height - 150;
-                } else {
-                    // 中间圈随机偏移
-                    let prev = circles[i-1];
-                    x = prev.x + Math.random() * 200 + 100;
-                    // 保持在画面内并向下延伸
-                    y = prev.y + (Math.random() * 200 - 50);
-                    y = Math.max(100, Math.min(canvas.height - 100, y));
-                    // 如果 x 超出屏幕，回到左边
-                    if (x > canvas.width - 150) x = canvas.width - 150;
+                let valid = false;
+                let attempts = 0;
+
+                while (!valid && attempts < 100) {
+                    // 随机方向，距离 250~400 (保证大距离跳跃)
+                    let angle = Math.random() * Math.PI * 2;
+                    let dist = 250 + Math.random() * 150;
+                    x = circles[i-1].x + Math.cos(angle) * dist;
+                    y = circles[i-1].y + Math.sin(angle) * dist;
+
+                    valid = true;
+                    // 检查与之前所有圈的距离，避免重叠或太近
+                    for (let j = 0; j < circles.length; j++) {
+                        let c = circles[j];
+                        let d = Math.hypot(x - c.x, y - c.y);
+                        if (d < c.r + r + 150) { // 150px 的最小间隙
+                            valid = false;
+                            break;
+                        }
+                    }
+                    attempts++;
                 }
 
-                // 颜色：起点红色，终点绿色，中间红蓝交替
                 let color = (i % 2 === 0) ? 'red' : 'blue';
-                if (i === 0) color = 'start';
                 if (i === numCircles - 1) color = 'end';
-
                 circles.push({ x, y, r, color });
             }
 
@@ -410,10 +442,14 @@
             let c0 = circles[0];
             ball.attachedIdx = 0;
             ball.isAttached = true;
-            ball.angle = -Math.PI / 2; // 从正上方开始
+            ball.angle = -Math.PI / 2; 
             ball.x = c0.x + c0.r * Math.cos(ball.angle);
             ball.y = c0.y + c0.r * Math.sin(ball.angle);
             
+            // 初始化镜头，对准第一个圈
+            camX = c0.x;
+            camY = c0.y;
+
             updateOrbitUI();
             lastTime = performance.now();
             orbitAnimId = requestAnimationFrame(orbitLoop);
@@ -432,15 +468,17 @@
             }
         }
 
-        // 核心跳跃动作
         function jump() {
             if (!ball.isAttached || orbitState !== 'playing') return;
 
             let c = circles[ball.attachedIdx];
             
-            // 沿切线方向飞出
-            let speed = Math.sqrt(orbitGravity * c.r); // 维持圆周运动的最小速度
-            let tangentAngle = ball.angle + (c.color === 'blue' ? -Math.PI / 2 : Math.PI / 2); // 蓝逆时针，红顺时针
+            // 利用新的参数计算切线飞出速度
+            let baseSpeed = Math.sqrt(orbitGravity * c.r);
+            let speed = baseSpeed * jumpSpeedMultiplier; 
+            
+            // 蓝逆时针，红顺时针
+            let tangentAngle = ball.angle + (c.color === 'blue' ? -Math.PI / 2 : Math.PI / 2); 
             
             ball.vx = speed * Math.cos(tangentAngle);
             ball.vy = speed * Math.sin(tangentAngle);
@@ -449,40 +487,37 @@
             updateOrbitUI();
         }
 
-        // 碰撞检测：判断线段(上一帧位置到当前帧位置)与圆是否相交
         function checkCollision(x0, y0, x1, y1) {
             for (let i = 0; i < circles.length; i++) {
-                if (i === ball.attachedIdx) continue; // 忽略当前圈
+                if (i === ball.attachedIdx) continue;
                 let c = circles[i];
                 
-                // 简单的距离检测，如果在圆环附近（半径误差范围内）
+                // 检查线段是否与圆环带相交 (使用点到圆心的距离判定)
                 let dx = x1 - c.x;
                 let dy = y1 - c.y;
                 let dist = Math.sqrt(dx*dx + dy*dy);
                 
-                // 如果球心距离圆心近似等于半径（考虑到时间步长，容差取大一点）
-                if (Math.abs(dist - c.r) < ball.radius + 15) {
-                    return i; // 发生碰撞，返回圈的索引
+                // 考虑到跳跃速度较快，检测容差稍微放宽一点点
+                if (Math.abs(dist - c.r) < ball.radius + 20) {
+                    return i; 
                 }
             }
             return -1;
         }
 
-        // 主循环
         function orbitLoop(timestamp) {
             if (orbitState !== 'playing') return;
             
             let dt = (timestamp - lastTime) / 1000;
-            if (dt > 0.1) dt = 0.1; // 防止切后台后瞬移过大
+            if (dt > 0.1) dt = 0.1; 
             lastTime = timestamp;
 
             // 1. 更新物理
             if (ball.isAttached) {
                 let c = circles[ball.attachedIdx];
-                let speed = Math.sqrt(orbitGravity * c.r); // 恒定线速度
-                let angularSpeed = speed / c.r; // 角速度
+                let speed = Math.sqrt(orbitGravity * c.r);
+                let angularSpeed = speed / c.r;
 
-                // 蓝逆时针，红顺时针
                 if (c.color === 'blue') {
                     ball.angle -= angularSpeed * dt;
                 } else {
@@ -492,7 +527,6 @@
                 ball.x = c.x + c.r * Math.cos(ball.angle);
                 ball.y = c.y + c.r * Math.sin(ball.angle);
             } else {
-                // 飞行状态
                 let prevX = ball.x;
                 let prevY = ball.y;
 
@@ -500,18 +534,15 @@
                 ball.x += ball.vx * dt;
                 ball.y += ball.vy * dt;
 
-                // 碰撞检测
+                // 碰撞检测与吸附
                 let hitIdx = checkCollision(prevX, prevY, ball.x, ball.y);
                 if (hitIdx !== -1) {
-                    // 吸附到新圈
                     ball.attachedIdx = hitIdx;
                     ball.isAttached = true;
                     let newC = circles[hitIdx];
                     
-                    // 重新计算吸附后的角度
                     ball.angle = Math.atan2(ball.y - newC.y, ball.x - newC.x);
                     
-                    // 胜利条件
                     if (newC.color === 'end') {
                         orbitState = 'won';
                         jumpHint.innerText = "🎉 到达终点！恭喜通关！";
@@ -525,8 +556,15 @@
                 }
             }
 
-            // 2. 边界判定（掉出屏幕）
-            if (ball.y > canvas.height + 50 || ball.x < -50 || ball.x > canvas.width + 50) {
+            // 2. 镜头平滑过渡
+            let targetX = circles[ball.attachedIdx].x;
+            let targetY = circles[ball.attachedIdx].y;
+            camX += (targetX - camX) * 0.08;
+            camY += (targetY - camY) * 0.08;
+
+            // 3. 边界判定（掉出很远）
+            let distFromCamera = Math.hypot(ball.x - camX, ball.y - camY);
+            if (distFromCamera > canvas.height) {
                 orbitState = 'lost';
                 jumpHint.innerText = "💀 坠落深渊，按返回大厅重试";
                 jumpHint.style.color = "#e74c3c";
@@ -534,39 +572,38 @@
                 return;
             }
 
-            // 3. 绘制画面
+            // 4. 绘制
             drawOrbit();
 
-            // 4. 循环下一帧
             if (orbitState === 'playing') {
                 orbitAnimId = requestAnimationFrame(orbitLoop);
             }
         }
 
         function drawOrbit() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // 纯白背景
+            ctx.fillStyle = "#ffffff"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 绘制背景星星 (可选，增加氛围)
-            ctx.fillStyle = "#ffffff";
-            for(let i=0; i<50; i++) {
-                let x = (i * 137.5) % canvas.width;
-                let y = (i * 314.1) % canvas.height;
-                ctx.globalAlpha = 0.1 + (i % 5) * 0.1;
-                ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI * 2); ctx.fill();
-            }
-            ctx.globalAlpha = 1;
+            // 坐标转换：世界坐标 -> 屏幕坐标
+            const toScreen = (x, y) => ({
+                x: x - camX + canvas.width / 2,
+                y: y - camY + canvas.height / 2
+            });
 
-            // 绘制圆圈
             for (let i = 0; i < circles.length; i++) {
                 let c = circles[i];
+                let pt = toScreen(c.x, c.y);
                 
-                // 颜色设定
-                if (c.color === 'red') ctx.strokeStyle = '#e94560'; // 红色
-                else if (c.color === 'blue') ctx.strokeStyle = '#3498db'; // 蓝色
-                else if (c.color === 'start') ctx.strokeStyle = '#f1c40f'; // 起点黄色
-                else ctx.strokeStyle = '#2ecc71'; // 终点绿色
+                // 剔除视野外太远的元素
+                if (pt.x < -300 || pt.x > canvas.width + 300 || pt.y < -300 || pt.y > canvas.height + 300) continue;
 
-                // 如果是当前所在圈，高亮
+                if (c.color === 'red') ctx.strokeStyle = '#e74c3c'; 
+                else if (c.color === 'blue') ctx.strokeStyle = '#3498db'; 
+                else if (c.color === 'start') ctx.strokeStyle = '#f1c40f'; 
+                else ctx.strokeStyle = '#2ecc71'; 
+
+                // 高亮当前所在的圈
                 if (ball.attachedIdx === i && ball.isAttached) {
                     ctx.lineWidth = 4;
                     ctx.shadowBlur = 15;
@@ -577,14 +614,14 @@
                 }
 
                 ctx.beginPath();
-                ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                ctx.arc(pt.x, pt.y, c.r, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // 绘制指引箭头(方向)
+                // 绘制方向指示小点
                 ctx.fillStyle = ctx.strokeStyle;
                 let arrowAngle = (c.color === 'blue') ? Math.PI : 0;
-                let ax = c.x + c.r * Math.cos(arrowAngle);
-                let ay = c.y + c.r * Math.sin(arrowAngle);
+                let ax = pt.x + c.r * Math.cos(arrowAngle);
+                let ay = pt.y + c.r * Math.sin(arrowAngle);
                 ctx.beginPath();
                 ctx.arc(ax, ay, 4, 0, Math.PI*2);
                 ctx.fill();
@@ -592,48 +629,30 @@
             ctx.shadowBlur = 0;
 
             // 绘制小球
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ffffff';
+            let bpt = toScreen(ball.x, ball.y);
+            ctx.fillStyle = '#333333'; 
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(0,0,0,0.2)';
             ctx.beginPath();
-            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.arc(bpt.x, bpt.y, ball.radius, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
         }
 
-        // 键盘事件监听 (全局)
+        // 键盘事件
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
-                e.preventDefault(); // 阻止页面滚动
-                if (currentGame === 'orbit') {
-                    jump();
-                }
+                e.preventDefault(); 
+                if (currentGame === 'orbit') jump();
             }
         });
 
-        // 手机端跳跃按钮
-        mobileJumpBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            jump();
-        });
-        mobileJumpBtn.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            jump();
-        });
-        
-        // 点击Canvas也能跳跃
-        canvas.addEventListener('mousedown', () => {
-            if (currentGame === 'orbit') jump();
-        });
-        
-        canvas.addEventListener('touchstart', (e) => {
-            if (currentGame === 'orbit') { e.preventDefault(); jump(); }
-        });
+        mobileJumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
+        mobileJumpBtn.addEventListener('mousedown', (e) => { e.preventDefault(); jump(); });
+        canvas.addEventListener('mousedown', () => { if (currentGame === 'orbit') jump(); });
+        canvas.addEventListener('touchstart', (e) => { if (currentGame === 'orbit') { e.preventDefault(); jump(); } });
 
-        // 确保页面加载完
-        window.onload = () => {
-            resizeCanvas();
-        };
+        window.onload = () => { resizeCanvas(); };
 
     </script>
 </body>
