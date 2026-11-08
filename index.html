@@ -122,6 +122,7 @@
         .orbit-hist-list li:last-child { border-bottom: none; }
         .hist-win { color: #27ae60; font-weight: bold; }
         .hist-fail { color: #e74c3c; }
+        .hist-endless { color: #8e44ad; font-weight: bold; } /* 新增无尽模式颜色 */
         
         /* 底部提示文字 */
         .jump-hint { 
@@ -223,7 +224,6 @@
     <div id="screen-orbit" class="screen">
         <div class="orbit-container">
             
-            <!-- 欢迎界面 -->
             <div class="welcome-overlay active" id="orbit-welcome">
                 <h2>🪐 星轨穿梭</h2>
                 <p>利用离心力在圆轨间跳跃</p>
@@ -877,17 +877,20 @@
             initOrbitGame();
         }
 
-        // ★ 修改：标出难度
+        // ★ 修改：区分无尽模式与常规模式的结算称谓
         function addOrbitHistory(score, isWin) {
-            let diffName = '正常';
-            if (currentDifficulty === 'easy') diffName = '简单';
-            else if (currentDifficulty === 'endless') diffName = '无尽';
-
             let html = '';
-            if (isWin) {
-                html = `<li><span class="hist-win">✅ ${diffName}通关</span> <span>得分: ${score}</span></li>`;
+            
+            if (currentDifficulty === 'endless') {
+                // 无尽模式没有失败/通关，统称为“无尽挑战”
+                html = `<li><span class="hist-endless">🏁 无尽挑战</span> <span>得分: ${score}</span></li>`;
             } else {
-                html = `<li><span class="hist-fail">💀 ${diffName}失败</span> <span>得分: ${score}</span></li>`;
+                let diffName = currentDifficulty === 'easy' ? '简单' : '正常';
+                if (isWin) {
+                    html = `<li><span class="hist-win">✅ ${diffName}通关</span> <span>得分: ${score}</span></li>`;
+                } else {
+                    html = `<li><span class="hist-fail">💀 ${diffName}失败</span> <span>得分: ${score}</span></li>`;
+                }
             }
             
             if (orbitHistList.children[0] && orbitHistList.children[0].style.color === 'rgb(153, 153, 153)') {
