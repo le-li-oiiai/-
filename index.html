@@ -517,6 +517,7 @@
         let orbitFailCount = 0; 
         let lastSafeCircle = 0; 
         let currentDifficulty = 'normal'; 
+        let maxReachedIdx = 0; // ★ 新增：记录到达过的最远圈索引，防止刷分
         
         let ripples = [];
         let floatingTexts = [];
@@ -557,6 +558,7 @@
             orbitScore = 0;
             orbitFailCount = 0;
             lastSafeCircle = 0;
+            maxReachedIdx = 0; // ★ 重置最远记录
             orbitScoreEl.textContent = orbitScore;
             
             failModal.classList.remove('active');
@@ -588,9 +590,8 @@
                 curX += Math.cos(curAngle) * dist;
                 curY += Math.sin(curAngle) * dist;
                 
-                // ★ 修改：红蓝圈完全随机排列
                 let color = Math.random() > 0.5 ? 'red' : 'blue';
-                if (i === numCircles - 1) color = 'end'; // 终点保证是绿色
+                if (i === numCircles - 1) color = 'end';
                 circles.push({ x: curX, y: curY, r, color });
             }
 
@@ -684,7 +685,6 @@
             return -1;
         }
 
-        // 新增：统一的涟漪生成函数
         function createRipple(x, y, r) {
             ripples.push({ x: x, y: y, r: r, alpha: 0.6, startTime: performance.now() });
         }
@@ -734,13 +734,22 @@
                         ball.angle = Math.atan2(ball.y - newC.y, ball.x - newC.x);
                         lastSafeCircle = hitIdx; 
 
-                        // 每次成功吸附新圈，都生成一个涟漪
+                        // 每次成功吸附，都生成一个涟漪
                         createRipple(newC.x, newC.y, newC.r);
 
-                        if (hitIdx > oldIdx) {
-                            let jumpDistance = hitIdx - oldIdx;
+                        // ★ 新增：若落回原轨道，则更改该轨道颜色（反转方向）
+                        if (hitIdx === oldIdx) {
+                            if (newC.color === 'red') newC.color = 'blue';
+                            else if (newC.color === 'blue') newC.color = 'red';
+                        }
+
+                        // ★ 修改：修复往回跳刷分的 Bug
+                        // 只有当前到达的圈数大于历史最远圈数时，才计算新增距离的分数
+                        if (hitIdx > maxReachedIdx) {
+                            let jumpDistance = hitIdx - maxReachedIdx; // 突破的最远距离
                             let points = jumpDistance * (jumpDistance + 1) / 2;
                             orbitScore += points;
+                            maxReachedIdx = hitIdx; // 更新最远记录
                             
                             floatingTexts.push({
                                 x: ball.x,
@@ -795,12 +804,11 @@
             }
         }
 
-        // 修改：微调涟漪的扩散和透明度衰减速度，使其更柔和
         function updateRipples(dt) {
             for (let i = ripples.length - 1; i >= 0; i--) {
                 let rp = ripples[i];
-                rp.r += 1.5;    // 扩散速度变慢
-                rp.alpha -= 0.03; // 变淡速度加快
+                rp.r += 1.5;    
+                rp.alpha -= 0.03; 
                 if (rp.alpha <= 0) {
                     ripples.splice(i, 1); 
                 }
@@ -886,7 +894,6 @@
                 y: y - camY + canvas.height / 2
             });
 
-            // 绘制涟漪（浅灰色，低透明度）
             for (let rp of ripples) {
                 let pt = toScreen(rp.x, rp.y);
                 ctx.strokeStyle = `rgba(150, 150, 150, ${Math.max(0, rp.alpha)})`; 
