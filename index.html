@@ -91,9 +91,9 @@
         .welcome-overlay.active { opacity: 1; pointer-events: auto; }
         .welcome-overlay h2 { font-size: 32px; color: #333; margin-bottom: 10px; }
         .welcome-overlay p { color: #666; margin-bottom: 30px; }
-        .diff-select { display: flex; gap: 20px; margin-bottom: 30px; }
+        .diff-select { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center; }
         .diff-option {
-            padding: 10px 30px; border: 2px solid #eee; border-radius: 10px;
+            padding: 10px 25px; border: 2px solid #eee; border-radius: 10px;
             cursor: pointer; font-size: 18px; font-weight: bold; color: #666; transition: 0.2s;
         }
         .diff-option input { display: none; }
@@ -172,19 +172,15 @@
             .cell.flag { font-size: 16px; }
             .stats-bar { font-size: 13px; flex-direction: column; gap: 5px; }
             .menu-btn { padding: 15px 30px; font-size: 18px; width: 80%; }
-            .orbit-sidebar { width: 130px; padding: 10px; top: 10px; left: 10px; }
+            .orbit-sidebar { width: 140px; padding: 10px; top: 10px; left: 10px; }
             .orbit-hist-list { font-size: 11px; }
-            .orbit-back-btn { right: 140px; top: 15px; padding: 5px 10px; font-size: 12px;}
+            .orbit-back-btn { right: 150px; top: 15px; padding: 5px 10px; font-size: 12px;}
             .orbit-score-box { font-size: 14px; padding: 5px 15px; }
-            .diff-select { flex-direction: column; gap: 10px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ==========================================
-         界面 1: 主菜单
-         ========================================== -->
     <div id="screen-menu" class="screen active">
         <div class="menu-buttons">
             <button class="menu-btn" onclick="switchGame('minesweeper')">💣 经典扫雷</button>
@@ -192,9 +188,6 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         界面 2: 扫雷
-         ========================================== -->
     <div id="screen-minesweeper" class="screen">
         <button class="back-btn" onclick="switchGame('menu')">← 返回大厅</button>
         <div class="game-panel">
@@ -227,9 +220,6 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         界面 3: 星轨穿梭
-         ========================================== -->
     <div id="screen-orbit" class="screen">
         <div class="orbit-container">
             
@@ -244,14 +234,15 @@
                     <label class="diff-option selected" id="diff-normal-label">
                         <input type="radio" name="orbit-diff" value="normal" checked> 正常
                     </label>
+                    <label class="diff-option" id="diff-endless-label">
+                        <input type="radio" name="orbit-diff" value="endless"> 无尽
+                    </label>
                 </div>
                 <button class="start-btn" onclick="startOrbitWithDifficulty()">开始游戏</button>
             </div>
 
-            <!-- 游戏画布 -->
             <canvas id="orbit-canvas"></canvas>
             
-            <!-- 左侧历史记录 -->
             <div class="orbit-sidebar">
                 <h3>📜 穿梭记录</h3>
                 <ul class="orbit-hist-list" id="orbit-hist-list">
@@ -259,28 +250,22 @@
                 </ul>
             </div>
 
-            <!-- 右上角得分 -->
             <div class="orbit-ui">
                 <div class="orbit-score-box">得分: <span id="orbit-score">0</span></div>
             </div>
             
-            <!-- 返回按钮 -->
             <button class="orbit-back-btn" onclick="switchGame('menu')">返回大厅</button>
-            
-            <!-- 底部提示文字 -->
             <div class="jump-hint" id="jump-hint">按 空格 或 点击屏幕 脱离轨道！</div>
 
-            <!-- 失败弹窗 -->
             <div class="modal-overlay" id="fail-modal">
                 <div class="modal-box">
                     <h2>😵 掉落深渊！</h2>
-                    <p>是否消耗一次机会原地复活？</p>
+                    <p>是否消耗一次机会，直接传送到下一个圈？</p>
                     <button class="modal-btn btn-primary" onclick="respawnOrbit()">复活</button>
                     <button class="modal-btn btn-secondary" onclick="restartOrbitFromFail()">重来</button>
                 </div>
             </div>
 
-            <!-- 成功弹窗 -->
             <div class="modal-overlay" id="win-modal">
                 <div class="modal-box">
                     <h2 style="color: #27ae60;">🎉 挑战成功！</h2>
@@ -517,7 +502,7 @@
         let orbitFailCount = 0; 
         let lastSafeCircle = 0; 
         let currentDifficulty = 'normal'; 
-        let maxReachedIdx = 0; // ★ 新增：记录到达过的最远圈索引，防止刷分
+        let maxReachedIdx = 0; 
         
         let ripples = [];
         let floatingTexts = [];
@@ -548,6 +533,26 @@
         }
         window.addEventListener('resize', resizeCanvas);
 
+        function generateNextCircle() {
+            let i = circles.length;
+            let prevC = circles[i-1];
+            let r = Math.random() * 60 + 20; 
+            
+            let prevAngle = Math.atan2(prevC.y - (i > 1 ? circles[i-2].y : 0), prevC.x - (i > 1 ? circles[i-2].x : 0));
+            let curAngle = prevAngle + (Math.random() - 0.5) * (Math.PI / 3);
+            
+            let dist = prevC.r * 2.5 + Math.random() * prevC.r * 1.0;
+            dist = Math.max(dist, 120); 
+
+            let curX = prevC.x + Math.cos(curAngle) * dist;
+            let curY = prevC.y + Math.sin(curAngle) * dist;
+            
+            let color = Math.random() > 0.5 ? 'red' : 'blue';
+            if (currentDifficulty !== 'endless' && i === 14) color = 'end';
+            
+            circles.push({ x: curX, y: curY, r, color });
+        }
+
         function initOrbitGame() {
             cancelAnimationFrame(orbitAnimId);
             
@@ -558,41 +563,26 @@
             orbitScore = 0;
             orbitFailCount = 0;
             lastSafeCircle = 0;
-            maxReachedIdx = 0; // ★ 重置最远记录
+            maxReachedIdx = 0; 
             orbitScoreEl.textContent = orbitScore;
             
             failModal.classList.remove('active');
             winModal.classList.remove('active');
             jumpHint.classList.remove('show');
 
-            let numCircles = 15;
             if (currentDifficulty === 'easy') {
-                numCircles = 10;
                 orbitGravity = 350;
                 jumpSpeedMultiplier = 2.2;
             } else {
-                numCircles = 15;
                 orbitGravity = 400;
                 jumpSpeedMultiplier = 2.0;
             }
 
-            let curX = 0, curY = 0;
-            let curAngle = Math.PI / 4;
-            
-            circles.push({x: curX, y: curY, r: 50, color: 'start'});
+            circles.push({x: 0, y: 0, r: 50, color: 'start'});
 
-            for (let i = 1; i < numCircles; i++) {
-                let r = Math.random() * 60 + 20; 
-                
-                curAngle += (Math.random() - 0.5) * (Math.PI / 3); 
-                
-                let dist = currentDifficulty === 'easy' ? (140 + Math.random() * 30) : (180 + Math.random() * 40); 
-                curX += Math.cos(curAngle) * dist;
-                curY += Math.sin(curAngle) * dist;
-                
-                let color = Math.random() > 0.5 ? 'red' : 'blue';
-                if (i === numCircles - 1) color = 'end';
-                circles.push({ x: curX, y: curY, r, color });
+            let initCount = currentDifficulty === 'endless' ? 20 : 15;
+            for (let i = 1; i < initCount; i++) {
+                generateNextCircle();
             }
 
             let c0 = circles[0];
@@ -734,22 +724,18 @@
                         ball.angle = Math.atan2(ball.y - newC.y, ball.x - newC.x);
                         lastSafeCircle = hitIdx; 
 
-                        // 每次成功吸附，都生成一个涟漪
                         createRipple(newC.x, newC.y, newC.r);
 
-                        // ★ 新增：若落回原轨道，则更改该轨道颜色（反转方向）
                         if (hitIdx === oldIdx) {
                             if (newC.color === 'red') newC.color = 'blue';
                             else if (newC.color === 'blue') newC.color = 'red';
                         }
 
-                        // ★ 修改：修复往回跳刷分的 Bug
-                        // 只有当前到达的圈数大于历史最远圈数时，才计算新增距离的分数
                         if (hitIdx > maxReachedIdx) {
-                            let jumpDistance = hitIdx - maxReachedIdx; // 突破的最远距离
+                            let jumpDistance = hitIdx - maxReachedIdx;
                             let points = jumpDistance * (jumpDistance + 1) / 2;
                             orbitScore += points;
-                            maxReachedIdx = hitIdx; // 更新最远记录
+                            maxReachedIdx = hitIdx;
                             
                             floatingTexts.push({
                                 x: ball.x,
@@ -759,6 +745,12 @@
                                 age: 0,
                                 life: 0.7 
                             });
+                        }
+
+                        if (currentDifficulty === 'endless' && hitIdx >= circles.length - 5) {
+                            while (circles.length < hitIdx + 10) {
+                                generateNextCircle();
+                            }
                         }
 
                         if (newC.color === 'end') {
@@ -830,8 +822,16 @@
             failModal.classList.remove('active');
             orbitState = 'playing';
             
-            ball.attachedIdx = lastSafeCircle;
-            let c = circles[lastSafeCircle];
+            if (currentDifficulty !== 'endless' && ball.attachedIdx >= circles.length - 2) {
+                ball.attachedIdx = circles.length - 1;
+                ball.isAttached = true;
+                triggerWin();
+                return;
+            }
+
+            let nextIdx = ball.attachedIdx + 1;
+            ball.attachedIdx = nextIdx;
+            let c = circles[nextIdx];
             ball.isAttached = true;
             ball.angle = -Math.PI / 2; 
             ball.x = c.x + c.r * Math.cos(ball.angle);
@@ -839,6 +839,8 @@
             ball.prevX = ball.x;
             ball.prevY = ball.y;
             justJumped = false;
+
+            maxReachedIdx = Math.max(maxReachedIdx, nextIdx); 
 
             camX = c.x; camY = c.y;
             targetCamX = c.x; targetCamY = c.y;
@@ -858,6 +860,11 @@
             addOrbitHistory(orbitScore, true);
             jumpHint.classList.remove('show');
 
+            let c = circles[ball.attachedIdx];
+            for (let i = 0; i < 5; i++) {
+                ripples.push({ x: c.x, y: c.y, r: c.r, maxR: c.r + 150, alpha: 1, delay: i * 150, startTime: performance.now() });
+            }
+
             setTimeout(() => {
                 if (orbitState === 'won') {
                     finalScoreEl.textContent = orbitScore;
@@ -870,12 +877,17 @@
             initOrbitGame();
         }
 
+        // ★ 修改：标出难度
         function addOrbitHistory(score, isWin) {
+            let diffName = '正常';
+            if (currentDifficulty === 'easy') diffName = '简单';
+            else if (currentDifficulty === 'endless') diffName = '无尽';
+
             let html = '';
             if (isWin) {
-                html = `<li><span class="hist-win">✅ 通关</span> <span>得分: ${score}</span></li>`;
+                html = `<li><span class="hist-win">✅ ${diffName}通关</span> <span>得分: ${score}</span></li>`;
             } else {
-                html = `<li><span class="hist-fail">💀 失败</span> <span>得分: ${score}</span></li>`;
+                html = `<li><span class="hist-fail">💀 ${diffName}失败</span> <span>得分: ${score}</span></li>`;
             }
             
             if (orbitHistList.children[0] && orbitHistList.children[0].style.color === 'rgb(153, 153, 153)') {
