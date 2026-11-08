@@ -308,7 +308,6 @@
                 initGame();
             } else if (gameName === 'orbit') {
                 document.getElementById('screen-orbit').classList.add('active');
-                // 显示欢迎界面，暂停游戏
                 document.getElementById('orbit-welcome').classList.add('active');
                 stopOrbitGame();
             }
@@ -534,19 +533,23 @@
             document.getElementById('orbit-welcome').classList.remove('active');
             const selectedDiff = document.querySelector('input[name="orbit-diff"]:checked').value;
             currentDifficulty = selectedDiff;
-            initOrbitGame();
+            
+            // 等待 DOM 完全渲染后获取画布尺寸
+            setTimeout(() => {
+                resizeCanvas();
+                initOrbitGame();
+            }, 50);
         }
 
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = rect.width;
+            canvas.width = rect.width || window.innerWidth;
             canvas.height = rect.height || window.innerHeight;
         }
         window.addEventListener('resize', resizeCanvas);
 
         function initOrbitGame() {
             cancelAnimationFrame(orbitAnimId);
-            resizeCanvas();
             
             orbitState = 'playing';
             circles = [];
@@ -597,6 +600,11 @@
             ball.angle = -Math.PI / 2; 
             ball.x = c0.x + c0.r * Math.cos(ball.angle);
             ball.y = c0.y + c0.r * Math.sin(ball.angle);
+            
+            // 修复：初始化上一帧位置
+            ball.prevX = ball.x;
+            ball.prevY = ball.y;
+
             justJumped = false;
             
             camX = c0.x; camY = c0.y;
@@ -677,12 +685,18 @@
             return -1;
         }
 
+        // 修复：将 dt 的作用域提升，防止 ReferenceError
         function orbitLoop(timestamp) {
-            if (orbitState === 'playing') {
-                let dt = (timestamp - lastTime) / 1000;
+            let dt = 0;
+            
+            // 如果游戏处于运行或者特效播放状态，才计算 dt
+            if (orbitState === 'playing' || orbitState === 'won' || orbitState === 'modal') {
+                dt = (timestamp - lastTime) / 1000;
                 if (dt > 0.1) dt = 0.1; 
                 lastTime = timestamp;
+            }
 
+            if (orbitState === 'playing') {
                 if (ball.isAttached) {
                     let c = circles[ball.attachedIdx];
                     let speed = Math.sqrt(orbitGravity * c.r);
@@ -751,12 +765,13 @@
                 }
             }
 
+            // 使用提升后的 dt 更新特效
             updateRipples(dt);
             updateFloatingTexts(dt);
 
             drawOrbit();
 
-            if (orbitState === 'playing' || orbitState === 'won') {
+            if (orbitState === 'playing' || orbitState === 'won' || orbitState === 'modal') {
                 orbitAnimId = requestAnimationFrame(orbitLoop);
             }
         }
