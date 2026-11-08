@@ -122,7 +122,7 @@
         .orbit-hist-list li:last-child { border-bottom: none; }
         .hist-win { color: #27ae60; font-weight: bold; }
         .hist-fail { color: #e74c3c; }
-        .hist-endless { color: #8e44ad; font-weight: bold; } /* 新增无尽模式颜色 */
+        .hist-endless { color: #8e44ad; font-weight: bold; } /* 无尽模式颜色 */
         
         /* 底部提示文字 */
         .jump-hint { 
@@ -533,7 +533,7 @@
         }
         window.addEventListener('resize', resizeCanvas);
 
-        // ★ 核心修改：加入方向重力补偿，向上跳跃时缩短距离
+        // ★ 核心修改：恢复原本的基础距离，仅保留方向重力补偿
         function generateNextCircle() {
             let i = circles.length;
             let prevC = circles[i-1];
@@ -543,11 +543,10 @@
             let prevAngle = Math.atan2(prevC.y - (i > 1 ? circles[i-2].y : 0), prevC.x - (i > 1 ? circles[i-2].x : 0));
             let curAngle = prevAngle + (Math.random() - 0.5) * (Math.PI / 3);
             
-            // 基础距离
-            let baseDist = prevC.r * 2.0 + Math.random() * prevC.r * 0.8;
+            // 恢复之前的基础距离公式
+            let baseDist = prevC.r * 2.5 + Math.random() * prevC.r * 1.0;
             
             // 重力补偿因子 (sin值越小说明越向上)
-            // curAngle = -PI/2 时是正上方，sin = -1，此时距离应该大幅缩短
             let dy = Math.sin(curAngle); 
             let distMultiplier = 1.0;
             if (dy < 0) {
