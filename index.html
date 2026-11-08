@@ -534,7 +534,6 @@
             const selectedDiff = document.querySelector('input[name="orbit-diff"]:checked').value;
             currentDifficulty = selectedDiff;
             
-            // 等待 DOM 完全渲染后获取画布尺寸
             setTimeout(() => {
                 resizeCanvas();
                 initOrbitGame();
@@ -589,8 +588,9 @@
                 curX += Math.cos(curAngle) * dist;
                 curY += Math.sin(curAngle) * dist;
                 
-                let color = (i % 2 === 0) ? 'red' : 'blue';
-                if (i === numCircles - 1) color = 'end';
+                // ★ 修改：红蓝圈完全随机排列
+                let color = Math.random() > 0.5 ? 'red' : 'blue';
+                if (i === numCircles - 1) color = 'end'; // 终点保证是绿色
                 circles.push({ x: curX, y: curY, r, color });
             }
 
@@ -601,7 +601,6 @@
             ball.x = c0.x + c0.r * Math.cos(ball.angle);
             ball.y = c0.y + c0.r * Math.sin(ball.angle);
             
-            // 修复：初始化上一帧位置
             ball.prevX = ball.x;
             ball.prevY = ball.y;
 
@@ -685,11 +684,14 @@
             return -1;
         }
 
-        // 修复：将 dt 的作用域提升，防止 ReferenceError
+        // 新增：统一的涟漪生成函数
+        function createRipple(x, y, r) {
+            ripples.push({ x: x, y: y, r: r, alpha: 0.6, startTime: performance.now() });
+        }
+
         function orbitLoop(timestamp) {
             let dt = 0;
             
-            // 如果游戏处于运行或者特效播放状态，才计算 dt
             if (orbitState === 'playing' || orbitState === 'won' || orbitState === 'modal') {
                 dt = (timestamp - lastTime) / 1000;
                 if (dt > 0.1) dt = 0.1; 
@@ -732,6 +734,9 @@
                         ball.angle = Math.atan2(ball.y - newC.y, ball.x - newC.x);
                         lastSafeCircle = hitIdx; 
 
+                        // 每次成功吸附新圈，都生成一个涟漪
+                        createRipple(newC.x, newC.y, newC.r);
+
                         if (hitIdx > oldIdx) {
                             let jumpDistance = hitIdx - oldIdx;
                             let points = jumpDistance * (jumpDistance + 1) / 2;
@@ -765,7 +770,6 @@
                 }
             }
 
-            // 使用提升后的 dt 更新特效
             updateRipples(dt);
             updateFloatingTexts(dt);
 
@@ -791,16 +795,14 @@
             }
         }
 
+        // 修改：微调涟漪的扩散和透明度衰减速度，使其更柔和
         function updateRipples(dt) {
-            let now = performance.now();
             for (let i = ripples.length - 1; i >= 0; i--) {
                 let rp = ripples[i];
-                if (now - rp.startTime > rp.delay) {
-                    rp.r += 2; 
-                    rp.alpha -= 0.015; 
-                    if (rp.alpha <= 0) {
-                        ripples.splice(i, 1); 
-                    }
+                rp.r += 1.5;    // 扩散速度变慢
+                rp.alpha -= 0.03; // 变淡速度加快
+                if (rp.alpha <= 0) {
+                    ripples.splice(i, 1); 
                 }
             }
         }
@@ -826,6 +828,8 @@
             ball.angle = -Math.PI / 2; 
             ball.x = c.x + c.r * Math.cos(ball.angle);
             ball.y = c.y + c.r * Math.sin(ball.angle);
+            ball.prevX = ball.x;
+            ball.prevY = ball.y;
             justJumped = false;
 
             camX = c.x; camY = c.y;
@@ -846,17 +850,12 @@
             addOrbitHistory(orbitScore, true);
             jumpHint.classList.remove('show');
 
-            let c = circles[ball.attachedIdx];
-            for (let i = 0; i < 5; i++) {
-                ripples.push({ x: c.x, y: c.y, r: c.r, maxR: c.r + 150, alpha: 1, delay: i * 150, startTime: performance.now() });
-            }
-
             setTimeout(() => {
                 if (orbitState === 'won') {
                     finalScoreEl.textContent = orbitScore;
                     winModal.classList.add('active');
                 }
-            }, 1200);
+            }, 1000);
         }
 
         function restartOrbitFromWin() {
@@ -887,10 +886,11 @@
                 y: y - camY + canvas.height / 2
             });
 
+            // 绘制涟漪（浅灰色，低透明度）
             for (let rp of ripples) {
                 let pt = toScreen(rp.x, rp.y);
-                ctx.strokeStyle = `rgba(46, 204, 113, ${Math.max(0, rp.alpha)})`;
-                ctx.lineWidth = 3;
+                ctx.strokeStyle = `rgba(150, 150, 150, ${Math.max(0, rp.alpha)})`; 
+                ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(pt.x, pt.y, rp.r, 0, Math.PI * 2);
                 ctx.stroke();
