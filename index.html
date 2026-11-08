@@ -64,12 +64,26 @@
         #history-list li { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
 
         /* ====== 星轨穿梭 (Orbit) 样式 ====== */
-        #screen-orbit { position: relative; width: 100%; height: 100vh; overflow: hidden; }
+        #screen-orbit { position: relative; width: 100%; height: 100vh; overflow: hidden; background-color: #ffffff; }
         .orbit-container { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
         
-        .orbit-ui { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; }
-        .orbit-score { color: #333; background: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: 20px; font-weight: bold; border: 1px solid #eee; box-shadow: 0 2px 10px rgba(0,0,0,0.05);}
+        .orbit-ui { position: absolute; top: 20px; left: 0; right: 20px; display: flex; justify-content: flex-end; pointer-events: none; z-index: 10;}
+        .orbit-score-box { color: #333; background: rgba(255,255,255,0.9); padding: 8px 20px; border-radius: 20px; font-weight: bold; border: 1px solid #eee; box-shadow: 0 2px 10px rgba(0,0,0,0.05); font-size: 18px;}
+        
+        /* 左侧历史记录侧边栏 */
+        .orbit-sidebar {
+            position: absolute; top: 20px; left: 20px; width: 200px;
+            background: rgba(255,255,255,0.9); border: 1px solid #eee; border-radius: 10px;
+            padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); z-index: 10;
+            pointer-events: auto;
+        }
+        .orbit-sidebar h3 { margin: 0 0 10px 0; font-size: 16px; color: #333; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 8px;}
+        .orbit-hist-list { list-style: none; padding: 0; margin: 0; font-size: 13px; max-height: 200px; overflow-y: auto; }
+        .orbit-hist-list li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #f0f0f0; }
+        .orbit-hist-list li:last-child { border-bottom: none; }
+        .hist-win { color: #27ae60; font-weight: bold; }
+        .hist-fail { color: #e74c3c; }
         
         .jump-hint { 
             color: #e74c3c; font-size: 20px; font-weight: bold; 
@@ -90,10 +104,35 @@
         }
         
         .orbit-back-btn {
-            position: absolute; top: 20px; right: 20px; z-index: 10;
+            position: absolute; top: 20px; right: 220px; z-index: 10;
             padding: 8px 15px; border-radius: 20px; background: rgba(255,255,255,0.9);
             border: 1px solid #ccc; color: #666; cursor: pointer;
         }
+
+        /* 弹窗系统 */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.7); backdrop-filter: blur(4px);
+            display: flex; justify-content: center; align-items: center; z-index: 100;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-box {
+            background: #fff; padding: 30px 50px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;
+            border: 1px solid #eee; transform: translateY(20px); transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+        .modal-box h2 { margin-top: 0; color: #333; }
+        .modal-box p { color: #666; margin-bottom: 25px; }
+        .modal-btn {
+            padding: 10px 25px; margin: 0 10px; border-radius: 8px; border: none;
+            font-size: 16px; cursor: pointer; transition: 0.2s; font-weight: bold;
+        }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-secondary { background: #ecf0f1; color: #333; }
+        .btn-secondary:hover { background: #bdc3c7; }
 
         @media (max-width: 600px) {
             .cell { width: 24px; height: 24px; font-size: 14px; }
@@ -101,6 +140,10 @@
             .stats-bar { font-size: 13px; flex-direction: column; gap: 5px; }
             .mobile-jump-btn { display: block; }
             .menu-btn { padding: 15px 30px; font-size: 18px; width: 80%; }
+            .orbit-sidebar { width: 130px; padding: 10px; top: 10px; left: 10px; }
+            .orbit-hist-list { font-size: 11px; }
+            .orbit-back-btn { right: 140px; top: 15px; padding: 5px 10px; font-size: 12px;}
+            .orbit-score-box { font-size: 14px; padding: 5px 15px; }
         }
     </style>
 </head>
@@ -148,12 +191,44 @@
     <div id="screen-orbit" class="screen">
         <div class="orbit-container">
             <canvas id="orbit-canvas"></canvas>
-            <div class="orbit-ui">
-                <div class="orbit-score">进度: <span id="orbit-progress">0 / 0</span></div>
+            
+            <!-- 左侧历史记录 -->
+            <div class="orbit-sidebar">
+                <h3>📜 穿梭记录</h3>
+                <ul class="orbit-hist-list" id="orbit-hist-list">
+                    <li style="color:#999; justify-content:center; border:none;">暂无记录</li>
+                </ul>
             </div>
+
+            <div class="orbit-ui">
+                <div class="orbit-score-box">得分: <span id="orbit-score">0</span></div>
+            </div>
+            
             <button class="orbit-back-btn" onclick="switchGame('menu')">返回大厅</button>
+            
             <div class="jump-hint" id="jump-hint">按 空格 或 点击屏幕 脱离轨道！</div>
             <button class="mobile-jump-btn" id="mobile-jump">跳跃</button>
+
+            <!-- 失败弹窗 -->
+            <div class="modal-overlay" id="fail-modal">
+                <div class="modal-box">
+                    <h2>😵 掉落深渊！</h2>
+                    <p>是否消耗一次机会原地复活？</p>
+                    <button class="modal-btn btn-primary" onclick="respawnOrbit()">复活</button>
+                    <button class="modal-btn btn-secondary" onclick="restartOrbitFromFail()">重来</button>
+                </div>
+            </div>
+
+            <!-- 成功弹窗 -->
+            <div class="modal-overlay" id="win-modal">
+                <div class="modal-box">
+                    <h2 style="color: #27ae60;">🎉 挑战成功！</h2>
+                    <p>你成功到达了终点，获得了 <b id="final-score">0</b> 分！</p>
+                    <button class="modal-btn btn-secondary" onclick="switchGame('menu')">回到大厅</button>
+                    <button class="modal-btn btn-primary" onclick="restartOrbitFromWin()">重来一次</button>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -353,26 +428,36 @@
         // ==========================================
         const canvas = document.getElementById('orbit-canvas');
         const ctx = canvas.getContext('2d');
-        const progressText = document.getElementById('orbit-progress');
         const jumpHint = document.getElementById('jump-hint');
         const mobileJumpBtn = document.getElementById('mobile-jump');
+        const orbitScoreEl = document.getElementById('orbit-score');
+        const orbitHistList = document.getElementById('orbit-hist-list');
+        const failModal = document.getElementById('fail-modal');
+        const winModal = document.getElementById('win-modal');
+        const finalScoreEl = document.getElementById('final-score');
 
         let orbitAnimId;
         let circles = [];
         let ball = { x: 0, y: 0, vx: 0, vy: 0, radius: 8, attachedIdx: -1, angle: 0, isAttached: true, prevX: 0, prevY: 0 };
         
-        let orbitGravity = 400; // 重力加速度
-        let jumpSpeedMultiplier = 2.0; // 飞出速度倍率
-        let justJumped = false; // 防止刚飞出就被原圈吸住
+        let orbitGravity = 400; 
+        let jumpSpeedMultiplier = 2.0; 
+        let justJumped = false; 
         
-        let orbitState = 'playing';
+        let orbitState = 'playing'; // playing, won, lost, modal
         let lastTime = 0;
         
-        // 镜头坐标
-        let camX = 0;
-        let camY = 0;
-        let targetCamX = 0;
-        let targetCamY = 0;
+        // 镜头
+        let camX = 0, camY = 0;
+        let targetCamX = 0, targetCamY = 0;
+
+        // 游戏数据
+        let orbitScore = 0;
+        let orbitFailCount = 0; // 本局失败次数
+        let lastSafeCircle = 0; // 上次安全吸附的圈索引，用于复活
+        
+        // 涟漪特效
+        let ripples = [];
 
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
@@ -384,24 +469,29 @@
         function initOrbitGame() {
             cancelAnimationFrame(orbitAnimId);
             resizeCanvas();
+            
+            // 重置状态
             orbitState = 'playing';
             circles = [];
+            ripples = [];
+            orbitScore = 0;
+            orbitFailCount = 0;
+            lastSafeCircle = 0;
+            orbitScoreEl.textContent = orbitScore;
             
+            failModal.classList.remove('active');
+            winModal.classList.remove('active');
+            jumpHint.classList.remove('show');
+
             let numCircles = 15; 
             let curX = 0, curY = 0;
-            let curAngle = Math.PI / 4; // 初始方向
+            let curAngle = Math.PI / 4;
             
-            // 起点
             circles.push({x: curX, y: curY, r: 50, color: 'start'});
 
-            // 平滑生成后续轨道
             for (let i = 1; i < numCircles; i++) {
-                let r = Math.random() * 35 + 30; // 半径范围 30 ~ 65
-                
-                // 方向做出微小偏转，保证路径光滑
+                let r = Math.random() * 35 + 30;
                 curAngle += (Math.random() - 0.5) * (Math.PI / 3); 
-                
-                // 间距控制在 180 ~ 210 之间，确保抛物线够得着
                 let dist = 180 + Math.random() * 30; 
                 curX += Math.cos(curAngle) * dist;
                 curY += Math.sin(curAngle) * dist;
@@ -411,17 +501,14 @@
                 circles.push({ x: curX, y: curY, r, color });
             }
 
-            // 初始化小球
             let c0 = circles[0];
             ball.attachedIdx = 0;
             ball.isAttached = true;
             ball.angle = -Math.PI / 2; 
             ball.x = c0.x + c0.r * Math.cos(ball.angle);
             ball.y = c0.y + c0.r * Math.sin(ball.angle);
-            
             justJumped = false;
             
-            // 镜头初始化
             camX = c0.x; camY = c0.y;
             targetCamX = c0.x; targetCamY = c0.y;
 
@@ -435,7 +522,7 @@
         }
 
         function updateOrbitUI() {
-            progressText.textContent = `${ball.attachedIdx + 1} / ${circles.length}`;
+            orbitScoreEl.textContent = orbitScore;
             if (ball.isAttached && orbitState === 'playing') {
                 jumpHint.classList.add('show');
             } else {
@@ -447,18 +534,15 @@
             if (!ball.isAttached || orbitState !== 'playing') return;
 
             let c = circles[ball.attachedIdx];
-            
-            // 计算飞出初速度
             let baseSpeed = Math.sqrt(orbitGravity * c.r);
             let speed = baseSpeed * jumpSpeedMultiplier; 
             
-            // 蓝逆时针(-)，红顺时针(+)
             let tangentAngle = ball.angle + (c.color === 'blue' ? -Math.PI / 2 : Math.PI / 2); 
             
             ball.vx = speed * Math.cos(tangentAngle);
             ball.vy = speed * Math.sin(tangentAngle);
             ball.isAttached = false;
-            justJumped = true; // 标记为刚飞出状态
+            justJumped = true; 
             
             updateOrbitUI();
         }
@@ -468,11 +552,8 @@
                 let c = circles[i];
                 let dist = Math.hypot(ball.x - c.x, ball.y - c.y);
                 
-                // 检测小球是否碰触到圆圈线条（容许一定误差）
                 if (Math.abs(dist - c.r) < ball.radius + 10) {
-                    // 如果碰到的还是刚刚脱离的那个圈，且还没飞远，则忽略碰撞
                     if (i === ball.attachedIdx && !ball.isAttached && justJumped) {
-                        // 当小球距离圆心大于半径+30时，说明真的飞出去了，解除锁定
                         if (dist < c.r + 30) {
                             continue;
                         } else {
@@ -486,79 +567,174 @@
         }
 
         function orbitLoop(timestamp) {
-            if (orbitState !== 'playing') return;
-            
-            let dt = (timestamp - lastTime) / 1000;
-            if (dt > 0.1) dt = 0.1; 
-            lastTime = timestamp;
+            if (orbitState === 'playing') {
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.1; 
+                lastTime = timestamp;
 
-            // 1. 物理与状态更新
-            if (ball.isAttached) {
-                let c = circles[ball.attachedIdx];
-                let speed = Math.sqrt(orbitGravity * c.r);
-                let angularSpeed = speed / c.r;
+                // 物理更新
+                if (ball.isAttached) {
+                    let c = circles[ball.attachedIdx];
+                    let speed = Math.sqrt(orbitGravity * c.r);
+                    let angularSpeed = speed / c.r;
 
-                if (c.color === 'blue') ball.angle -= angularSpeed * dt;
-                else ball.angle += angularSpeed * dt;
+                    if (c.color === 'blue') ball.angle -= angularSpeed * dt;
+                    else ball.angle += angularSpeed * dt;
 
-                ball.prevX = ball.x;
-                ball.prevY = ball.y;
-                ball.x = c.x + c.r * Math.cos(ball.angle);
-                ball.y = c.y + c.r * Math.sin(ball.angle);
-                
-                // 更新镜头目标
-                targetCamX = c.x;
-                targetCamY = c.y;
-            } else {
-                ball.prevX = ball.x;
-                ball.prevY = ball.y;
-
-                ball.vy += orbitGravity * dt;
-                ball.x += ball.vx * dt;
-                ball.y += ball.vy * dt;
-
-                // 碰撞检测
-                let hitIdx = checkCollision();
-                if (hitIdx !== -1) {
-                    ball.attachedIdx = hitIdx;
-                    ball.isAttached = true;
-                    justJumped = false;
-                    let newC = circles[hitIdx];
+                    ball.prevX = ball.x;
+                    ball.prevY = ball.y;
+                    ball.x = c.x + c.r * Math.cos(ball.angle);
+                    ball.y = c.y + c.r * Math.sin(ball.angle);
                     
-                    ball.angle = Math.atan2(ball.y - newC.y, ball.x - newC.x);
-                    
-                    if (newC.color === 'end') {
-                        orbitState = 'won';
-                        jumpHint.innerText = "🎉 到达终点！恭喜通关！";
-                        jumpHint.style.color = "#2ecc71";
-                        jumpHint.classList.add('show');
-                        updateOrbitUI();
-                        return;
-                    } else {
-                        updateOrbitUI();
+                    targetCamX = c.x;
+                    targetCamY = c.y;
+                } else {
+                    ball.prevX = ball.x;
+                    ball.prevY = ball.y;
+
+                    ball.vy += orbitGravity * dt;
+                    ball.x += ball.vx * dt;
+                    ball.y += ball.vy * dt;
+
+                    let hitIdx = checkCollision();
+                    if (hitIdx !== -1) {
+                        let oldIdx = ball.attachedIdx;
+                        ball.attachedIdx = hitIdx;
+                        ball.isAttached = true;
+                        justJumped = false;
+                        let newC = circles[hitIdx];
+                        
+                        ball.angle = Math.atan2(ball.y - newC.y, ball.x - newC.x);
+                        lastSafeCircle = hitIdx; // 记录安全点
+
+                        // 计分逻辑：只有当向前跳跃时才加分
+                        if (hitIdx > oldIdx) {
+                            orbitScore += (hitIdx - oldIdx);
+                        }
+
+                        if (newC.color === 'end') {
+                            triggerWin();
+                            return;
+                        } else {
+                            updateOrbitUI();
+                        }
                     }
+                }
+
+                // 镜头平滑跟随
+                camX += (targetCamX - camX) * 0.06;
+                camY += (targetCamY - camY) * 0.06;
+
+                // 坠机判定
+                let distFromCamera = Math.hypot(ball.x - camX, ball.y - camY);
+                if (distFromCamera > Math.max(canvas.width, canvas.height) * 0.8) {
+                    triggerFail();
                 }
             }
 
-            // 2. 镜头平滑跟随 (只有在吸附时目标才会改变，飞行时镜头不动)
-            camX += (targetCamX - camX) * 0.06;
-            camY += (targetCamY - camY) * 0.06;
+            // 更新涟漪特效（无论什么状态都让它继续播放）
+            updateRipples();
 
-            // 3. 坠机判定
-            let distFromCamera = Math.hypot(ball.x - camX, ball.y - camY);
-            if (distFromCamera > Math.max(canvas.width, canvas.height) * 0.8) {
-                orbitState = 'lost';
-                jumpHint.innerText = "💀 坠落深渊，按返回大厅重试";
-                jumpHint.style.color = "#e74c3c";
-                jumpHint.classList.add('show');
-                return;
-            }
-
-            // 4. 绘制
+            // 绘制
             drawOrbit();
 
-            if (orbitState === 'playing') {
+            if (orbitState === 'playing' || orbitState === 'won') {
                 orbitAnimId = requestAnimationFrame(orbitLoop);
+            }
+        }
+
+        // === 失败处理 ===
+        function triggerFail() {
+            orbitState = 'modal';
+            if (orbitFailCount === 0) {
+                // 第一次失败，弹窗
+                orbitFailCount++;
+                failModal.classList.add('active');
+            } else {
+                // 第二次失败，直接重开
+                addOrbitHistory(orbitScore, false);
+                initOrbitGame();
+            }
+        }
+
+        function respawnOrbit() {
+            failModal.classList.remove('active');
+            orbitState = 'playing';
+            
+            // 复活在最后一次安全的圈上
+            ball.attachedIdx = lastSafeCircle;
+            let c = circles[lastSafeCircle];
+            ball.isAttached = true;
+            ball.angle = -Math.PI / 2; // 回到顶部重新转
+            ball.x = c.x + c.r * Math.cos(ball.angle);
+            ball.y = c.y + c.r * Math.sin(ball.angle);
+            justJumped = false;
+
+            camX = c.x; camY = c.y;
+            targetCamX = c.x; targetCamY = c.y;
+
+            lastTime = performance.now();
+            updateOrbitUI();
+            orbitAnimId = requestAnimationFrame(orbitLoop);
+        }
+
+        function restartOrbitFromFail() {
+            addOrbitHistory(orbitScore, false);
+            initOrbitGame();
+        }
+
+        // === 成功处理 ===
+        function triggerWin() {
+            orbitState = 'won'; // 设为 won 状态，会继续渲染涟漪，但不更新物理
+            addOrbitHistory(orbitScore, true);
+            jumpHint.classList.remove('show');
+
+            // 触发涟漪
+            let c = circles[ball.attachedIdx];
+            for (let i = 0; i < 5; i++) {
+                ripples.push({ x: c.x, y: c.y, r: c.r, maxR: c.r + 150, alpha: 1, delay: i * 150, startTime: performance.now() });
+            }
+
+            // 延迟弹出成功窗口
+            setTimeout(() => {
+                if (orbitState === 'won') {
+                    finalScoreEl.textContent = orbitScore;
+                    winModal.classList.add('active');
+                }
+            }, 1200);
+        }
+
+        function restartOrbitFromWin() {
+            initOrbitGame();
+        }
+
+        // === 记录与涟漪 ===
+        function addOrbitHistory(score, isWin) {
+            let html = '';
+            if (isWin) {
+                html = `<li><span class="hist-win">✅ 通关</span> <span>得分: ${score}</span></li>`;
+            } else {
+                html = `<li><span class="hist-fail">💀 失败</span> <span>得分: ${score}</span></li>`;
+            }
+            
+            if (orbitHistList.children[0] && orbitHistList.children[0].style.color === 'rgb(153, 153, 153)') {
+                orbitHistList.innerHTML = html;
+            } else {
+                orbitHistList.insertAdjacentHTML('afterbegin', html);
+            }
+        }
+
+        function updateRipples() {
+            let now = performance.now();
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                let rp = ripples[i];
+                if (now - rp.startTime > rp.delay) {
+                    rp.r += 2; // 扩散速度
+                    rp.alpha -= 0.015; // 变淡速度
+                    if (rp.alpha <= 0) {
+                        ripples.splice(i, 1);
+                    }
+                }
             }
         }
 
@@ -566,27 +742,34 @@
             ctx.fillStyle = "#ffffff"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 坐标转换 (世界坐标 -> 屏幕坐标)
             const toScreen = (x, y) => ({
                 x: x - camX + canvas.width / 2,
                 y: y - camY + canvas.height / 2
             });
 
+            // 1. 绘制涟漪
+            for (let rp of ripples) {
+                let pt = toScreen(rp.x, rp.y);
+                ctx.strokeStyle = `rgba(46, 204, 113, ${Math.max(0, rp.alpha)})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, rp.r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // 2. 绘制圆圈
             for (let i = 0; i < circles.length; i++) {
                 let c = circles[i];
                 let pt = toScreen(c.x, c.y);
                 
-                // 视野外剔除
                 if (pt.x < -200 || pt.x > canvas.width + 200 || pt.y < -200 || pt.y > canvas.height + 200) continue;
 
-                // 设定颜色
                 if (c.color === 'red') ctx.strokeStyle = '#e74c3c'; 
                 else if (c.color === 'blue') ctx.strokeStyle = '#3498db'; 
                 else if (c.color === 'start') ctx.strokeStyle = '#f1c40f'; 
                 else ctx.strokeStyle = '#2ecc71'; 
 
-                // 当前所在圈高亮
-                if (ball.attachedIdx === i && ball.isAttached) {
+                if (ball.attachedIdx === i && (ball.isAttached || orbitState === 'won')) {
                     ctx.lineWidth = 4;
                     ctx.shadowBlur = 15;
                     ctx.shadowColor = ctx.strokeStyle;
@@ -599,7 +782,6 @@
                 ctx.arc(pt.x, pt.y, c.r, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // 方向指示
                 ctx.fillStyle = ctx.strokeStyle;
                 let arrowAngle = (c.color === 'blue') ? Math.PI : 0;
                 let ax = pt.x + c.r * Math.cos(arrowAngle);
@@ -610,7 +792,7 @@
             }
             ctx.shadowBlur = 0;
 
-            // 绘制小球
+            // 3. 绘制小球
             let bpt = toScreen(ball.x, ball.y);
             ctx.fillStyle = '#333333'; 
             ctx.shadowBlur = 8;
@@ -625,14 +807,14 @@
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault(); 
-                if (currentGame === 'orbit') jump();
+                if (currentGame === 'orbit' && orbitState === 'playing') jump();
             }
         });
 
         mobileJumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
         mobileJumpBtn.addEventListener('mousedown', (e) => { e.preventDefault(); jump(); });
-        canvas.addEventListener('mousedown', () => { if (currentGame === 'orbit') jump(); });
-        canvas.addEventListener('touchstart', (e) => { if (currentGame === 'orbit') { e.preventDefault(); jump(); } });
+        canvas.addEventListener('mousedown', () => { if (currentGame === 'orbit' && orbitState === 'playing') jump(); });
+        canvas.addEventListener('touchstart', (e) => { if (currentGame === 'orbit' && orbitState === 'playing') { e.preventDefault(); jump(); } });
 
         window.onload = () => { resizeCanvas(); };
 
