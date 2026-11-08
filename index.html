@@ -533,16 +533,33 @@
         }
         window.addEventListener('resize', resizeCanvas);
 
+        // ★ 核心修改：加入方向重力补偿，向上跳跃时缩短距离
         function generateNextCircle() {
             let i = circles.length;
             let prevC = circles[i-1];
-            let r = Math.random() * 60 + 20; 
+            let r = Math.random() * 60 + 20; // 半径 20 ~ 80
             
+            // 角度平滑过渡
             let prevAngle = Math.atan2(prevC.y - (i > 1 ? circles[i-2].y : 0), prevC.x - (i > 1 ? circles[i-2].x : 0));
             let curAngle = prevAngle + (Math.random() - 0.5) * (Math.PI / 3);
             
-            let dist = prevC.r * 2.5 + Math.random() * prevC.r * 1.0;
-            dist = Math.max(dist, 120); 
+            // 基础距离
+            let baseDist = prevC.r * 2.0 + Math.random() * prevC.r * 0.8;
+            
+            // 重力补偿因子 (sin值越小说明越向上)
+            // curAngle = -PI/2 时是正上方，sin = -1，此时距离应该大幅缩短
+            let dy = Math.sin(curAngle); 
+            let distMultiplier = 1.0;
+            if (dy < 0) {
+                // 向上跳，距离按角度缩短 (最高可缩短至 55%)
+                distMultiplier = 0.55 + 0.45 * (1 + dy);
+            } else {
+                // 向下跳，距离稍微拉长 (最多拉长 15%)
+                distMultiplier = 1.0 + 0.15 * dy;
+            }
+            
+            let dist = baseDist * distMultiplier;
+            dist = Math.max(dist, 120); // 最小距离限制，防止重叠
 
             let curX = prevC.x + Math.cos(curAngle) * dist;
             let curY = prevC.y + Math.sin(curAngle) * dist;
@@ -877,12 +894,10 @@
             initOrbitGame();
         }
 
-        // ★ 修改：区分无尽模式与常规模式的结算称谓
         function addOrbitHistory(score, isWin) {
             let html = '';
             
             if (currentDifficulty === 'endless') {
-                // 无尽模式没有失败/通关，统称为“无尽挑战”
                 html = `<li><span class="hist-endless">🏁 无尽挑战</span> <span>得分: ${score}</span></li>`;
             } else {
                 let diffName = currentDifficulty === 'easy' ? '简单' : '正常';
