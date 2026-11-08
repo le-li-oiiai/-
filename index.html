@@ -273,7 +273,7 @@
             currentGame = gameName;
             if (gameName === 'menu') {
                 document.getElementById('screen-menu').classList.add('active');
-                stopOrbitGame(); // 停止游戏循环防卡顿
+                stopOrbitGame();
             } else if (gameName === 'minesweeper') {
                 document.getElementById('screen-minesweeper').classList.add('active');
                 initGame();
@@ -290,7 +290,7 @@
         let board = [], cellElements = [];
         let isGameOver = false, isFirstClick = true, revealedCount = 0, flagsPlaced = 0;
         let timerInterval = null, timeElapsed = 0;
-        let currentMode = 'reveal'; // 'reveal' 或 'flag'
+        let currentMode = 'reveal';
         let gameHistory = [];
 
         const boardEl = document.getElementById('game-board');
@@ -304,13 +304,11 @@
         const statFlags = document.getElementById('stat-flags');
         const statSafe = document.getElementById('stat-safe');
 
-        // 初始化扫雷棋盘
         function initGame() {
             isGameOver = false; isFirstClick = true; revealedCount = 0; flagsPlaced = 0;
             stopTimer(); timeElapsed = 0; timeDisplay.textContent = 0;
             statusText.textContent = '点击格子开始游戏'; statusText.style.color = '#3498db';
 
-            // 根据难度设置参数
             const diff = difficultySelect.value;
             if (diff === 'easy') { rows = 9; cols = 9; mineCount = 10; }
             else if (diff === 'medium') { rows = 16; cols = 16; mineCount = 40; }
@@ -319,11 +317,9 @@
             boardEl.style.gridTemplateColumns = `repeat(${cols}, ${window.innerWidth < 600 ? '24px' : '30px'})`;
             boardEl.innerHTML = '';
             
-            // 初始化数据模型
             board = Array(rows).fill().map(() => Array(cols).fill(0));
             cellElements = Array(rows).fill().map(() => Array(cols).fill(null));
 
-            // 生成DOM网格
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const cell = document.createElement('div');
@@ -343,13 +339,11 @@
         }
         function stopTimer() { if (timerInterval) clearInterval(timerInterval); }
 
-        // 更新扫雷数据统计面板
         function updateStats() {
             statFlags.textContent = flagsPlaced;
             statSafe.textContent = (rows * cols) - revealedCount;
         }
 
-        // 布雷逻辑（首次点击保证安全）
         function placeMines(firstR, firstC) {
             let minesPlaced = 0;
             while (minesPlaced < mineCount) {
@@ -360,7 +354,6 @@
             calculateNumbers();
         }
 
-        // 计算周围雷数
         function calculateNumbers() {
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
@@ -377,7 +370,6 @@
             }
         }
 
-        // 处理排雷点击
         function handleReveal(r, c) {
             if (isGameOver) return;
             const cell = cellElements[r][c];
@@ -390,7 +382,6 @@
             updateStats();
         }
 
-        // 处理插旗
         function handleFlag(r, c) {
             if (isGameOver || isFirstClick) return;
             const cell = cellElements[r][c];
@@ -400,7 +391,6 @@
             updateStats();
         }
 
-        // 递归翻格子（如果点到空白，自动展开周围）
         function revealCell(r, c) {
             if (r < 0 || r >= rows || c < 0 || c >= cols) return;
             const cell = cellElements[r][c];
@@ -413,14 +403,12 @@
 
         function checkWin() { if (revealedCount === rows * cols - mineCount) gameOver(true); }
 
-        // 扫雷游戏结束
         function gameOver(isWin) {
             isGameOver = true; stopTimer();
             let diffName = difficultySelect.options[difficultySelect.selectedIndex].text.split(' ')[0];
             if (isWin) {
                 statusText.textContent = '🎉 恭喜你，排雷成功！'; statusText.style.color = '#27ae60';
                 addHistory(`✅ ${diffName}胜利`, timeElapsed);
-                // 高级难度专属彩蛋
                 if (difficultySelect.value === 'hard') triggerHiEgg();
             } else {
                 for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -434,7 +422,6 @@
             }
         }
 
-        // 扫雷彩蛋：画出Hi
         function triggerHiEgg() {
             setTimeout(() => {
                 statusText.textContent = '✨ 发现隐藏彩蛋！'; statusText.style.color = '#d35400';
@@ -452,7 +439,6 @@
             }, 600);
         }
 
-        // 扫雷历史记录
         function addHistory(resultStr, time) {
             gameHistory.unshift({ resultStr, time });
             if (gameHistory.length > 5) gameHistory.pop();
@@ -465,7 +451,6 @@
             });
         }
 
-        // 扫雷UI事件绑定
         btnReveal.addEventListener('click', () => { currentMode = 'reveal'; btnReveal.classList.add('active'); btnFlag.classList.remove('active'); });
         btnFlag.addEventListener('click', () => { currentMode = 'flag'; btnFlag.classList.add('active'); btnReveal.classList.remove('active'); });
         restartBtn.addEventListener('click', initGame);
@@ -489,26 +474,22 @@
         let circles = [];
         let ball = { x: 0, y: 0, vx: 0, vy: 0, radius: 8, attachedIdx: -1, angle: 0, isAttached: true, prevX: 0, prevY: 0 };
         
-        let orbitGravity = 400; // 重力加速度，决定了抛物线的下坠感
-        let jumpSpeedMultiplier = 2.0; // 飞出速度倍率，决定了抛物线能飞多远
-        let justJumped = false; // 防止刚飞出的瞬间被原圈重新吸住
+        let orbitGravity = 400; // 重力加速度
+        let jumpSpeedMultiplier = 2.0; // 飞出速度倍率
+        let justJumped = false; // 起跳保护，防止刚起步就立刻被原圈吸住
         
-        let orbitState = 'playing'; // playing(游戏中), won(胜利), lost(失败), modal(弹窗中)
+        let orbitState = 'playing'; 
         let lastTime = 0;
         
-        // 镜头坐标（用于平滑跟随）
         let camX = 0, camY = 0;
         let targetCamX = 0, targetCamY = 0;
 
-        // 游戏数据
         let orbitScore = 0;
-        let orbitFailCount = 0; // 记录本局失败次数，用于判断是复活还是直接重开
-        let lastSafeCircle = 0; // 记录上一次安全吸附的圈，用于复活点
+        let orbitFailCount = 0; 
+        let lastSafeCircle = 0; 
         
-        // 涟漪特效数组
         let ripples = [];
 
-        // 自适应画布大小
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width;
@@ -516,12 +497,10 @@
         }
         window.addEventListener('resize', resizeCanvas);
 
-        // 初始化星轨穿梭游戏
         function initOrbitGame() {
             cancelAnimationFrame(orbitAnimId);
             resizeCanvas();
             
-            // 重置状态
             orbitState = 'playing';
             circles = [];
             ripples = [];
@@ -534,32 +513,24 @@
             winModal.classList.remove('active');
             jumpHint.classList.remove('show');
 
-            let numCircles = 15; // 总共生成的圈数
+            let numCircles = 15; 
             let curX = 0, curY = 0;
-            let curAngle = Math.PI / 4; // 初始延伸角度
+            let curAngle = Math.PI / 4;
             
-            // 创建起点（黄圈）
             circles.push({x: curX, y: curY, r: 50, color: 'start'});
 
-            // 平滑生成后续的圈
             for (let i = 1; i < numCircles; i++) {
-                let r = Math.random() * 35 + 30; // 圈的半径在 30~65 之间随机
-                
-                // 角度偏移（控制在较小范围内，形成平滑曲线轨迹）
+                let r = Math.random() * 35 + 30;
                 curAngle += (Math.random() - 0.5) * (Math.PI / 3); 
-                
-                // 圈与圈之间的距离（180~210，保证小球抛物线恰好能飞过去）
                 let dist = 180 + Math.random() * 30; 
                 curX += Math.cos(curAngle) * dist;
                 curY += Math.sin(curAngle) * dist;
                 
-                // 颜色交替
                 let color = (i % 2 === 0) ? 'red' : 'blue';
-                if (i === numCircles - 1) color = 'end'; // 最后一个圈是绿色终点
+                if (i === numCircles - 1) color = 'end';
                 circles.push({ x: curX, y: curY, r, color });
             }
 
-            // 小球初始化在第一个圈的正上方
             let c0 = circles[0];
             ball.attachedIdx = 0;
             ball.isAttached = true;
@@ -568,7 +539,6 @@
             ball.y = c0.y + c0.r * Math.sin(ball.angle);
             justJumped = false;
             
-            // 镜头初始化对准第一个圈
             camX = c0.x; camY = c0.y;
             targetCamX = c0.x; targetCamY = c0.y;
 
@@ -581,7 +551,6 @@
             cancelAnimationFrame(orbitAnimId);
         }
 
-        // 更新计分和提示UI
         function updateOrbitUI() {
             orbitScoreEl.textContent = orbitScore;
             if (ball.isAttached && orbitState === 'playing') {
@@ -591,20 +560,15 @@
             }
         }
 
-        // 跳跃操作（断开丝线飞出）
         function jump() {
             if (!ball.isAttached || orbitState !== 'playing') return;
 
             let c = circles[ball.attachedIdx];
-            
-            // 计算飞出速度
             let baseSpeed = Math.sqrt(orbitGravity * c.r);
             let speed = baseSpeed * jumpSpeedMultiplier; 
             
-            // 计算切线角度（蓝色圈逆时针转，红色/黄色圈顺时针转）
             let tangentAngle = ball.angle + (c.color === 'blue' ? -Math.PI / 2 : Math.PI / 2); 
             
-            // 赋予飞出速度
             ball.vx = speed * Math.cos(tangentAngle);
             ball.vy = speed * Math.sin(tangentAngle);
             ball.isAttached = false;
@@ -613,92 +577,107 @@
             updateOrbitUI();
         }
 
-        // 碰撞检测：判断小球是否碰到了某个圈
+        // ★★★ 核心修改：升级为“线段与圆相交”碰撞检测 ★★★
+        // 这样可以完美解决小球下落速度过快“穿透”轨道导致无法落回原圈的问题
         function checkCollision() {
+            const x0 = ball.prevX;
+            const y0 = ball.prevY;
+            const x1 = ball.x;
+            const y1 = ball.y;
+
             for (let i = 0; i < circles.length; i++) {
                 let c = circles[i];
-                let dist = Math.hypot(ball.x - c.x, ball.y - c.y);
                 
-                // 判断小球中心到圆周的距离是否小于小球半径+容错值
-                if (Math.abs(dist - c.r) < ball.radius + 10) {
-                    // 如果碰到的是刚刚起跳的圈，并且还没飞远，则忽略碰撞（防止刚起跳就落回原圈）
-                    if (i === ball.attachedIdx && !ball.isAttached && justJumped) {
-                        if (dist < c.r + 30) {
-                            continue;
-                        } else {
-                            justJumped = false;
-                        }
+                // 1. 起跳保护机制
+                if (i === ball.attachedIdx && !ball.isAttached && justJumped) {
+                    let dist = Math.hypot(x1 - c.x, y1 - c.y);
+                    // 如果距离圆心还不够远（小于半径+20），说明刚起跳，忽略此圈的碰撞
+                    if (dist < c.r + 20) {
+                        continue; 
+                    } else {
+                        justJumped = false; // 飞远了，解除保护，允许落回原圈
                     }
-                    return i; 
+                }
+
+                // 2. 线段与圆周相交检测
+                let dx = x1 - x0;
+                let dy = y1 - y0;
+                let lenSq = dx * dx + dy * dy;
+                
+                // 如果两帧之间位置几乎没变，直接算点距
+                if (lenSq === 0) {
+                    let dist = Math.hypot(x1 - c.x, y1 - c.y);
+                    if (Math.abs(dist - c.r) < ball.radius + 8) return i;
+                    continue;
+                }
+
+                // 计算线段上距离圆心最近的点
+                let t = ((c.x - x0) * dx + (c.y - y0) * dy) / lenSq;
+                t = Math.max(0, Math.min(1, t)); // 限制在线段两端点之内
+
+                let closestX = x0 + t * dx;
+                let closestY = y0 + t * dy;
+                
+                // 计算该最近点到圆心的距离
+                let distToCenter = Math.hypot(closestX - c.x, closestY - c.y);
+                
+                // 如果最近点距离圆心，刚好在圆周半径上下波动，即视为发生碰撞
+                if (Math.abs(distToCenter - c.r) < ball.radius + 8) {
+                    return i;
                 }
             }
             return -1;
         }
 
-        // 游戏主循环（每帧执行）
         function orbitLoop(timestamp) {
             if (orbitState === 'playing') {
                 let dt = (timestamp - lastTime) / 1000;
-                if (dt > 0.1) dt = 0.1; // 限制最大帧间隔，防止切后台回来小球瞬移
+                if (dt > 0.1) dt = 0.1; 
                 lastTime = timestamp;
 
-                // 物理与状态更新
                 if (ball.isAttached) {
-                    // 1. 吸附在圈上，做圆周运动
                     let c = circles[ball.attachedIdx];
                     let speed = Math.sqrt(orbitGravity * c.r);
                     let angularSpeed = speed / c.r;
 
-                    // 根据圈颜色决定旋转方向
                     if (c.color === 'blue') ball.angle -= angularSpeed * dt;
                     else ball.angle += angularSpeed * dt;
 
                     ball.prevX = ball.x;
                     ball.prevY = ball.y;
                     
-                    // 更新小球位置
                     ball.x = c.x + c.r * Math.cos(ball.angle);
                     ball.y = c.y + c.r * Math.sin(ball.angle);
                     
-                    // 镜头目标设为当前圈心
                     targetCamX = c.x;
                     targetCamY = c.y;
                 } else {
-                    // 2. 在空中飞行
                     ball.prevX = ball.x;
                     ball.prevY = ball.y;
 
-                    // 施加重力影响
                     ball.vy += orbitGravity * dt;
                     ball.x += ball.vx * dt;
                     ball.y += ball.vy * dt;
 
-                    // 检测是否碰到了其他圈
+                    // 碰撞检测（如果落回原圈，hitIdx 就等于 ball.attachedIdx）
                     let hitIdx = checkCollision();
                     if (hitIdx !== -1) {
                         let oldIdx = ball.attachedIdx;
-                        // 吸附到新圈
                         ball.attachedIdx = hitIdx;
                         ball.isAttached = true;
                         justJumped = false;
                         let newC = circles[hitIdx];
                         
-                        // 重新计算吸附后的角度
                         ball.angle = Math.atan2(ball.y - newC.y, ball.x - newC.x);
-                        lastSafeCircle = hitIdx; // 记录安全点
+                        lastSafeCircle = hitIdx; 
 
-                        // ★★★ 核心计分逻辑修改 ★★★
-                        // 只有当向前跳跃（目标索引大于当前索引）时才加分
+                        // 计分逻辑（仅当跨到了新的前方圈才加分）
                         if (hitIdx > oldIdx) {
-                            let jumpDistance = hitIdx - oldIdx; // 跨越的圈数
-                            
-                            // 使用三角数公式：跨1圈(得分1)，跨2圈(得分3)，跨3圈(得分6)...
-                            // 公式推导：1+2+3+...+N = N*(N+1)/2
+                            let jumpDistance = hitIdx - oldIdx;
                             let points = jumpDistance * (jumpDistance + 1) / 2;
                             orbitScore += points;
                         }
 
-                        // 检测是否到达终点（绿圈）
                         if (newC.color === 'end') {
                             triggerWin();
                             return;
@@ -708,21 +687,16 @@
                     }
                 }
 
-                // 3. 镜头平滑跟随（只有吸附时目标才会改变，飞行时镜头不动）
                 camX += (targetCamX - camX) * 0.06;
                 camY += (targetCamY - camY) * 0.06;
 
-                // 4. 坠机判定（距离镜头中心过远，说明掉出屏幕了）
                 let distFromCamera = Math.hypot(ball.x - camX, ball.y - camY);
                 if (distFromCamera > Math.max(canvas.width, canvas.height) * 0.8) {
                     triggerFail();
                 }
             }
 
-            // 更新涟漪特效（无论什么状态都让它继续播放）
             updateRipples();
-
-            // 执行绘制
             drawOrbit();
 
             if (orbitState === 'playing' || orbitState === 'won') {
@@ -730,35 +704,29 @@
             }
         }
 
-        // === 失败处理机制 ===
         function triggerFail() {
             orbitState = 'modal';
             if (orbitFailCount === 0) {
-                // 第一次失败，暂停游戏并弹窗
                 orbitFailCount++;
                 failModal.classList.add('active');
             } else {
-                // 第二次失败，不再弹窗，记录成绩后直接重开
                 addOrbitHistory(orbitScore, false);
                 initOrbitGame();
             }
         }
 
-        // 复活操作
         function respawnOrbit() {
             failModal.classList.remove('active');
             orbitState = 'playing';
             
-            // 将小球放回最后一次安全的圈上
             ball.attachedIdx = lastSafeCircle;
             let c = circles[lastSafeCircle];
             ball.isAttached = true;
-            ball.angle = -Math.PI / 2; // 从顶部开始重新转
+            ball.angle = -Math.PI / 2; 
             ball.x = c.x + c.r * Math.cos(ball.angle);
             ball.y = c.y + c.r * Math.sin(ball.angle);
             justJumped = false;
 
-            // 镜头瞬间拉回
             camX = c.x; camY = c.y;
             targetCamX = c.x; targetCamY = c.y;
 
@@ -767,26 +735,21 @@
             orbitAnimId = requestAnimationFrame(orbitLoop);
         }
 
-        // 失败后点击重来
         function restartOrbitFromFail() {
             addOrbitHistory(orbitScore, false);
             initOrbitGame();
         }
 
-        // === 成功处理机制 ===
         function triggerWin() {
-            orbitState = 'won'; // 设为 won 状态，会继续渲染涟漪特效
+            orbitState = 'won'; 
             addOrbitHistory(orbitScore, true);
             jumpHint.classList.remove('show');
 
-            // 触发涟漪特效
             let c = circles[ball.attachedIdx];
             for (let i = 0; i < 5; i++) {
-                // 连续生成5个波纹
                 ripples.push({ x: c.x, y: c.y, r: c.r, maxR: c.r + 150, alpha: 1, delay: i * 150, startTime: performance.now() });
             }
 
-            // 延迟弹出成功窗口，让玩家欣赏一下涟漪
             setTimeout(() => {
                 if (orbitState === 'won') {
                     finalScoreEl.textContent = orbitScore;
@@ -795,13 +758,10 @@
             }, 1200);
         }
 
-        // 成功后点击重来
         function restartOrbitFromWin() {
             initOrbitGame();
         }
 
-        // === 记录与特效渲染 ===
-        // 记录历史成绩
         function addOrbitHistory(score, isWin) {
             let html = '';
             if (isWin) {
@@ -810,7 +770,6 @@
                 html = `<li><span class="hist-fail">💀 失败</span> <span>得分: ${score}</span></li>`;
             }
             
-            // 移除“暂无记录”提示
             if (orbitHistList.children[0] && orbitHistList.children[0].style.color === 'rgb(153, 153, 153)') {
                 orbitHistList.innerHTML = html;
             } else {
@@ -818,35 +777,29 @@
             }
         }
 
-        // 更新涟漪动画数据
         function updateRipples() {
             let now = performance.now();
             for (let i = ripples.length - 1; i >= 0; i--) {
                 let rp = ripples[i];
-                // 实现延时出现效果
                 if (now - rp.startTime > rp.delay) {
-                    rp.r += 2; // 扩散速度
-                    rp.alpha -= 0.015; // 变淡速度
+                    rp.r += 2; 
+                    rp.alpha -= 0.015; 
                     if (rp.alpha <= 0) {
-                        ripples.splice(i, 1); // 移除消失的涟漪
+                        ripples.splice(i, 1); 
                     }
                 }
             }
         }
 
-        // 绘制游戏画面
         function drawOrbit() {
-            // 清空画布背景
             ctx.fillStyle = "#ffffff"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 坐标转换函数：将世界坐标转换为屏幕坐标
             const toScreen = (x, y) => ({
                 x: x - camX + canvas.width / 2,
                 y: y - camY + canvas.height / 2
             });
 
-            // 1. 绘制涟漪特效（底下一层）
             for (let rp of ripples) {
                 let pt = toScreen(rp.x, rp.y);
                 ctx.strokeStyle = `rgba(46, 204, 113, ${Math.max(0, rp.alpha)})`;
@@ -856,21 +809,17 @@
                 ctx.stroke();
             }
 
-            // 2. 绘制所有圆圈
             for (let i = 0; i < circles.length; i++) {
                 let c = circles[i];
                 let pt = toScreen(c.x, c.y);
                 
-                // 视野外剔除，提高性能
                 if (pt.x < -200 || pt.x > canvas.width + 200 || pt.y < -200 || pt.y > canvas.height + 200) continue;
 
-                // 设置颜色
                 if (c.color === 'red') ctx.strokeStyle = '#e74c3c'; 
                 else if (c.color === 'blue') ctx.strokeStyle = '#3498db'; 
                 else if (c.color === 'start') ctx.strokeStyle = '#f1c40f'; 
                 else ctx.strokeStyle = '#2ecc71'; 
 
-                // 如果小球正吸附在这个圈上，或者已经通关，高亮该圈
                 if (ball.attachedIdx === i && (ball.isAttached || orbitState === 'won')) {
                     ctx.lineWidth = 4;
                     ctx.shadowBlur = 15;
@@ -880,14 +829,12 @@
                     ctx.shadowBlur = 0;
                 }
 
-                // 画圆
                 ctx.beginPath();
                 ctx.arc(pt.x, pt.y, c.r, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // 在圆周上画一个方向指示点
                 ctx.fillStyle = ctx.strokeStyle;
-                let arrowAngle = (c.color === 'blue') ? Math.PI : 0; // 蓝在左边，红在右边
+                let arrowAngle = (c.color === 'blue') ? Math.PI : 0;
                 let ax = pt.x + c.r * Math.cos(arrowAngle);
                 let ay = pt.y + c.r * Math.sin(arrowAngle);
                 ctx.beginPath();
@@ -896,7 +843,6 @@
             }
             ctx.shadowBlur = 0;
 
-            // 3. 绘制小球（最上层）
             let bpt = toScreen(ball.x, ball.y);
             ctx.fillStyle = '#333333'; 
             ctx.shadowBlur = 8;
@@ -907,21 +853,16 @@
             ctx.shadowBlur = 0;
         }
 
-        // ==========================================
-        // 全局输入事件监听
-        // ==========================================
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
-                e.preventDefault(); // 阻止按空格时网页滚动
+                e.preventDefault(); 
                 if (currentGame === 'orbit' && orbitState === 'playing') jump();
             }
         });
 
-        // 手机端跳跃按钮事件
         mobileJumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
         mobileJumpBtn.addEventListener('mousedown', (e) => { e.preventDefault(); jump(); });
         
-        // 电脑端点击画布跳跃事件
         canvas.addEventListener('mousedown', () => { if (currentGame === 'orbit' && orbitState === 'playing') jump(); });
         canvas.addEventListener('touchstart', (e) => { if (currentGame === 'orbit' && orbitState === 'playing') { e.preventDefault(); jump(); } });
 
