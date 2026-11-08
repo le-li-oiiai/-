@@ -23,27 +23,14 @@
         .screen.active { display: flex; }
 
         /* ====== 主菜单 ====== */
-        #screen-menu {
-            justify-content: center; /* 选项居中 */
-        }
+        #screen-menu { justify-content: center; }
         .menu-buttons { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
         .menu-btn {
-            background-color: #ffffff;
-            border: 2px solid #3498db;
-            color: #3498db;
-            padding: 20px 50px;
-            font-size: 22px;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
+            background-color: #ffffff; border: 2px solid #3498db; color: #3498db;
+            padding: 20px 50px; font-size: 22px; border-radius: 15px; cursor: pointer;
+            transition: all 0.3s; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
         }
-        .menu-btn:hover { 
-            background-color: #3498db; 
-            color: white;
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
-        }
+        .menu-btn:hover { background-color: #3498db; color: white; transform: translateY(-5px); box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3); }
 
         .back-btn { 
             background: none; border: 1px solid #bdc3c7; color: #7f8c8d; 
@@ -83,10 +70,12 @@
         
         .orbit-ui { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; }
         .orbit-score { color: #333; background: rgba(255,255,255,0.8); padding: 8px 20px; border-radius: 20px; font-weight: bold; border: 1px solid #eee; box-shadow: 0 2px 10px rgba(0,0,0,0.05);}
+        
         .jump-hint { 
-            color: #e74c3c; font-size: 24px; font-weight: bold; 
-            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+            color: #e74c3c; font-size: 20px; font-weight: bold; 
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
             animation: pulse 1.5s infinite; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+            background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 30px; border: 1px solid #eee;
         }
         .jump-hint.show { opacity: 1; }
         @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.05); } 100% { transform: translateX(-50%) scale(1); } }
@@ -117,7 +106,6 @@
 </head>
 <body>
 
-    <!-- 1. 主菜单 -->
     <div id="screen-menu" class="screen active">
         <div class="menu-buttons">
             <button class="menu-btn" onclick="switchGame('minesweeper')">💣 经典扫雷</button>
@@ -125,7 +113,6 @@
         </div>
     </div>
 
-    <!-- 2. 扫雷游戏 -->
     <div id="screen-minesweeper" class="screen">
         <button class="back-btn" onclick="switchGame('menu')">← 返回大厅</button>
         <div class="game-panel">
@@ -158,16 +145,13 @@
         </div>
     </div>
 
-    <!-- 3. 星轨穿梭游戏 -->
     <div id="screen-orbit" class="screen">
         <div class="orbit-container">
             <canvas id="orbit-canvas"></canvas>
-            
             <div class="orbit-ui">
                 <div class="orbit-score">进度: <span id="orbit-progress">0 / 0</span></div>
             </div>
             <button class="orbit-back-btn" onclick="switchGame('menu')">返回大厅</button>
-            
             <div class="jump-hint" id="jump-hint">按 空格 或 点击屏幕 脱离轨道！</div>
             <button class="mobile-jump-btn" id="mobile-jump">跳跃</button>
         </div>
@@ -178,11 +162,9 @@
         // 页面切换逻辑
         // ==========================================
         let currentGame = 'menu';
-
         function switchGame(gameName) {
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
             currentGame = gameName;
-
             if (gameName === 'menu') {
                 document.getElementById('screen-menu').classList.add('active');
                 stopOrbitGame();
@@ -196,7 +178,7 @@
         }
 
         // ==========================================
-        // 💣 扫雷游戏逻辑
+        // 💣 扫雷游戏逻辑 (保持不变)
         // ==========================================
         let rows = 9, cols = 9, mineCount = 10;
         let board = [], cellElements = [];
@@ -377,18 +359,20 @@
 
         let orbitAnimId;
         let circles = [];
-        let ball = { x: 0, y: 0, vx: 0, vy: 0, radius: 8, attachedIdx: -1, angle: 0, isAttached: true };
+        let ball = { x: 0, y: 0, vx: 0, vy: 0, radius: 8, attachedIdx: -1, angle: 0, isAttached: true, prevX: 0, prevY: 0 };
         
-        // 物理参数优化：降低重力，增加跳跃速度，手感更好
-        let orbitGravity = 400; 
-        let jumpSpeedMultiplier = 1.6; 
+        let orbitGravity = 400; // 重力加速度
+        let jumpSpeedMultiplier = 2.0; // 飞出速度倍率
+        let justJumped = false; // 防止刚飞出就被原圈吸住
         
-        let orbitState = 'playing'; // playing, won, lost
+        let orbitState = 'playing';
         let lastTime = 0;
         
         // 镜头坐标
         let camX = 0;
         let camY = 0;
+        let targetCamX = 0;
+        let targetCamY = 0;
 
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
@@ -403,42 +387,31 @@
             orbitState = 'playing';
             circles = [];
             
-            let numCircles = 15; // 生成足够多的圈，因为会有镜头移动
-            circles.push({x: 0, y: 0, r: 50, color: 'start'}); // 起点圆心在 (0,0)
+            let numCircles = 15; 
+            let curX = 0, curY = 0;
+            let curAngle = Math.PI / 4; // 初始方向
+            
+            // 起点
+            circles.push({x: curX, y: curY, r: 50, color: 'start'});
 
-            // 生成不重叠且距离适中的路径
+            // 平滑生成后续轨道
             for (let i = 1; i < numCircles; i++) {
-                let r = Math.random() * 30 + 40; // 半径 40~70
-                let x, y;
-                let valid = false;
-                let attempts = 0;
-
-                while (!valid && attempts < 100) {
-                    // 随机方向，距离 250~400 (保证大距离跳跃)
-                    let angle = Math.random() * Math.PI * 2;
-                    let dist = 250 + Math.random() * 150;
-                    x = circles[i-1].x + Math.cos(angle) * dist;
-                    y = circles[i-1].y + Math.sin(angle) * dist;
-
-                    valid = true;
-                    // 检查与之前所有圈的距离，避免重叠或太近
-                    for (let j = 0; j < circles.length; j++) {
-                        let c = circles[j];
-                        let d = Math.hypot(x - c.x, y - c.y);
-                        if (d < c.r + r + 150) { // 150px 的最小间隙
-                            valid = false;
-                            break;
-                        }
-                    }
-                    attempts++;
-                }
-
+                let r = Math.random() * 35 + 30; // 半径范围 30 ~ 65
+                
+                // 方向做出微小偏转，保证路径光滑
+                curAngle += (Math.random() - 0.5) * (Math.PI / 3); 
+                
+                // 间距控制在 180 ~ 210 之间，确保抛物线够得着
+                let dist = 180 + Math.random() * 30; 
+                curX += Math.cos(curAngle) * dist;
+                curY += Math.sin(curAngle) * dist;
+                
                 let color = (i % 2 === 0) ? 'red' : 'blue';
                 if (i === numCircles - 1) color = 'end';
-                circles.push({ x, y, r, color });
+                circles.push({ x: curX, y: curY, r, color });
             }
 
-            // 初始化小球在第一个圈上
+            // 初始化小球
             let c0 = circles[0];
             ball.attachedIdx = 0;
             ball.isAttached = true;
@@ -446,9 +419,11 @@
             ball.x = c0.x + c0.r * Math.cos(ball.angle);
             ball.y = c0.y + c0.r * Math.sin(ball.angle);
             
-            // 初始化镜头，对准第一个圈
-            camX = c0.x;
-            camY = c0.y;
+            justJumped = false;
+            
+            // 镜头初始化
+            camX = c0.x; camY = c0.y;
+            targetCamX = c0.x; targetCamY = c0.y;
 
             updateOrbitUI();
             lastTime = performance.now();
@@ -473,32 +448,37 @@
 
             let c = circles[ball.attachedIdx];
             
-            // 利用新的参数计算切线飞出速度
+            // 计算飞出初速度
             let baseSpeed = Math.sqrt(orbitGravity * c.r);
             let speed = baseSpeed * jumpSpeedMultiplier; 
             
-            // 蓝逆时针，红顺时针
+            // 蓝逆时针(-)，红顺时针(+)
             let tangentAngle = ball.angle + (c.color === 'blue' ? -Math.PI / 2 : Math.PI / 2); 
             
             ball.vx = speed * Math.cos(tangentAngle);
             ball.vy = speed * Math.sin(tangentAngle);
             ball.isAttached = false;
+            justJumped = true; // 标记为刚飞出状态
             
             updateOrbitUI();
         }
 
-        function checkCollision(x0, y0, x1, y1) {
+        function checkCollision() {
             for (let i = 0; i < circles.length; i++) {
-                if (i === ball.attachedIdx) continue;
                 let c = circles[i];
+                let dist = Math.hypot(ball.x - c.x, ball.y - c.y);
                 
-                // 检查线段是否与圆环带相交 (使用点到圆心的距离判定)
-                let dx = x1 - c.x;
-                let dy = y1 - c.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                
-                // 考虑到跳跃速度较快，检测容差稍微放宽一点点
-                if (Math.abs(dist - c.r) < ball.radius + 20) {
+                // 检测小球是否碰触到圆圈线条（容许一定误差）
+                if (Math.abs(dist - c.r) < ball.radius + 10) {
+                    // 如果碰到的还是刚刚脱离的那个圈，且还没飞远，则忽略碰撞
+                    if (i === ball.attachedIdx && !ball.isAttached && justJumped) {
+                        // 当小球距离圆心大于半径+30时，说明真的飞出去了，解除锁定
+                        if (dist < c.r + 30) {
+                            continue;
+                        } else {
+                            justJumped = false;
+                        }
+                    }
                     return i; 
                 }
             }
@@ -512,33 +492,37 @@
             if (dt > 0.1) dt = 0.1; 
             lastTime = timestamp;
 
-            // 1. 更新物理
+            // 1. 物理与状态更新
             if (ball.isAttached) {
                 let c = circles[ball.attachedIdx];
                 let speed = Math.sqrt(orbitGravity * c.r);
                 let angularSpeed = speed / c.r;
 
-                if (c.color === 'blue') {
-                    ball.angle -= angularSpeed * dt;
-                } else {
-                    ball.angle += angularSpeed * dt;
-                }
+                if (c.color === 'blue') ball.angle -= angularSpeed * dt;
+                else ball.angle += angularSpeed * dt;
 
+                ball.prevX = ball.x;
+                ball.prevY = ball.y;
                 ball.x = c.x + c.r * Math.cos(ball.angle);
                 ball.y = c.y + c.r * Math.sin(ball.angle);
+                
+                // 更新镜头目标
+                targetCamX = c.x;
+                targetCamY = c.y;
             } else {
-                let prevX = ball.x;
-                let prevY = ball.y;
+                ball.prevX = ball.x;
+                ball.prevY = ball.y;
 
                 ball.vy += orbitGravity * dt;
                 ball.x += ball.vx * dt;
                 ball.y += ball.vy * dt;
 
-                // 碰撞检测与吸附
-                let hitIdx = checkCollision(prevX, prevY, ball.x, ball.y);
+                // 碰撞检测
+                let hitIdx = checkCollision();
                 if (hitIdx !== -1) {
                     ball.attachedIdx = hitIdx;
                     ball.isAttached = true;
+                    justJumped = false;
                     let newC = circles[hitIdx];
                     
                     ball.angle = Math.atan2(ball.y - newC.y, ball.x - newC.x);
@@ -556,15 +540,13 @@
                 }
             }
 
-            // 2. 镜头平滑过渡
-            let targetX = circles[ball.attachedIdx].x;
-            let targetY = circles[ball.attachedIdx].y;
-            camX += (targetX - camX) * 0.08;
-            camY += (targetY - camY) * 0.08;
+            // 2. 镜头平滑跟随 (只有在吸附时目标才会改变，飞行时镜头不动)
+            camX += (targetCamX - camX) * 0.06;
+            camY += (targetCamY - camY) * 0.06;
 
-            // 3. 边界判定（掉出很远）
+            // 3. 坠机判定
             let distFromCamera = Math.hypot(ball.x - camX, ball.y - camY);
-            if (distFromCamera > canvas.height) {
+            if (distFromCamera > Math.max(canvas.width, canvas.height) * 0.8) {
                 orbitState = 'lost';
                 jumpHint.innerText = "💀 坠落深渊，按返回大厅重试";
                 jumpHint.style.color = "#e74c3c";
@@ -581,11 +563,10 @@
         }
 
         function drawOrbit() {
-            // 纯白背景
             ctx.fillStyle = "#ffffff"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 坐标转换：世界坐标 -> 屏幕坐标
+            // 坐标转换 (世界坐标 -> 屏幕坐标)
             const toScreen = (x, y) => ({
                 x: x - camX + canvas.width / 2,
                 y: y - camY + canvas.height / 2
@@ -595,15 +576,16 @@
                 let c = circles[i];
                 let pt = toScreen(c.x, c.y);
                 
-                // 剔除视野外太远的元素
-                if (pt.x < -300 || pt.x > canvas.width + 300 || pt.y < -300 || pt.y > canvas.height + 300) continue;
+                // 视野外剔除
+                if (pt.x < -200 || pt.x > canvas.width + 200 || pt.y < -200 || pt.y > canvas.height + 200) continue;
 
+                // 设定颜色
                 if (c.color === 'red') ctx.strokeStyle = '#e74c3c'; 
                 else if (c.color === 'blue') ctx.strokeStyle = '#3498db'; 
                 else if (c.color === 'start') ctx.strokeStyle = '#f1c40f'; 
                 else ctx.strokeStyle = '#2ecc71'; 
 
-                // 高亮当前所在的圈
+                // 当前所在圈高亮
                 if (ball.attachedIdx === i && ball.isAttached) {
                     ctx.lineWidth = 4;
                     ctx.shadowBlur = 15;
@@ -617,7 +599,7 @@
                 ctx.arc(pt.x, pt.y, c.r, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // 绘制方向指示小点
+                // 方向指示
                 ctx.fillStyle = ctx.strokeStyle;
                 let arrowAngle = (c.color === 'blue') ? Math.PI : 0;
                 let ax = pt.x + c.r * Math.cos(arrowAngle);
@@ -639,7 +621,7 @@
             ctx.shadowBlur = 0;
         }
 
-        // 键盘事件
+        // 输入事件
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault(); 
