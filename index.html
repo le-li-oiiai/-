@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的游戏大厅</title>
-    <!-- 引入分离的 CSS -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <!-- ==========================================
-         界面 1: 主菜单
-         ========================================== -->
+    <!-- 主菜单 -->
     <div id="screen-menu" class="screen active">
         <div class="menu-buttons">
             <button class="menu-btn" onclick="switchGame('minesweeper')">💣 经典扫雷</button>
@@ -19,9 +16,7 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         界面 2: 扫雷
-         ========================================== -->
+    <!-- 扫雷 -->
     <div id="screen-minesweeper" class="screen">
         <button class="back-btn" onclick="switchGame('menu')">← 返回大厅</button>
         <div class="game-panel">
@@ -54,9 +49,7 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         界面 3: 星轨穿梭
-         ========================================== -->
+    <!-- 星轨穿梭 -->
     <div id="screen-orbit" class="screen">
         <div class="orbit-container">
             
@@ -113,7 +106,7 @@
         </div>
     </div>
 
-    <!-- 按顺序引入 JS 文件 -->
+    <!-- 引入 JS 文件 -->
     <script src="js/minesweeper.js"></script>
     <script src="js/orbit.js"></script>
     <script src="js/main.js"></script>
