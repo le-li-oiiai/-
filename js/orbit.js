@@ -13,51 +13,37 @@ const finalScoreEl = document.getElementById('final-score');
 let orbitAnimId;
 let circles = [];
 let ball = { x: 0, y: 0, vx: 0, vy: 0, radius: 8, attachedIdx: -1, angle: 0, isAttached: true, prevX: 0, prevY: 0 };
-
 let orbitGravity = 400; 
 let jumpSpeedMultiplier = 2.0; 
 let justJumped = false; 
-
 let orbitState = 'playing'; 
 let lastTime = 0;
-
 let camX = 0, camY = 0;
 let targetCamX = 0, targetCamY = 0;
-
 let orbitScore = 0;
 let orbitFailCount = 0; 
 let lastSafeCircle = 0; 
 let currentDifficulty = 'normal'; 
 let maxReachedIdx = 0; 
-
 let ripples = [];
 let floatingTexts = [];
 
-const diffLabels = document.querySelectorAll('.diff-option');
-diffLabels.forEach(label => {
-    label.addEventListener('click', () => {
-        diffLabels.forEach(l => l.classList.remove('selected'));
-        label.classList.add('selected');
-    });
-});
-
-window.startOrbitWithDifficulty = function() {
+function startOrbitWithDifficulty() {
     document.getElementById('orbit-welcome').classList.remove('active');
     const selectedDiff = document.querySelector('input[name="orbit-diff"]:checked').value;
     currentDifficulty = selectedDiff;
     
     setTimeout(() => {
         resizeCanvas();
-        window.initOrbitGame();
+        initOrbitGame();
     }, 50);
-};
+}
 
 function resizeCanvas() {
     const rect = canvas.parentElement.getBoundingClientRect();
     canvas.width = rect.width || window.innerWidth;
     canvas.height = rect.height || window.innerHeight;
 }
-window.addEventListener('resize', resizeCanvas);
 
 function generateNextCircle() {
     let i = circles.length;
@@ -89,7 +75,7 @@ function generateNextCircle() {
     circles.push({ x: curX, y: curY, r, color });
 }
 
-window.initOrbitGame = function() {
+function initOrbitGame() {
     cancelAnimationFrame(orbitAnimId);
     
     orbitState = 'playing';
@@ -139,11 +125,11 @@ window.initOrbitGame = function() {
     updateOrbitUI();
     lastTime = performance.now();
     orbitAnimId = requestAnimationFrame(orbitLoop);
-};
+}
 
-window.stopOrbitGame = function() {
+function stopOrbitGame() {
     cancelAnimationFrame(orbitAnimId);
-};
+}
 
 function updateOrbitUI() {
     orbitScoreEl.textContent = orbitScore;
@@ -350,11 +336,11 @@ function triggerFail() {
         failModal.classList.add('active');
     } else {
         addOrbitHistory(orbitScore, false);
-        window.initOrbitGame();
+        initOrbitGame();
     }
 }
 
-window.respawnOrbit = function() {
+function respawnOrbit() {
     failModal.classList.remove('active');
     orbitState = 'playing';
     
@@ -384,12 +370,12 @@ window.respawnOrbit = function() {
     lastTime = performance.now();
     updateOrbitUI();
     orbitAnimId = requestAnimationFrame(orbitLoop);
-};
+}
 
-window.restartOrbitFromFail = function() {
+function restartOrbitFromFail() {
     addOrbitHistory(orbitScore, false);
-    window.initOrbitGame();
-};
+    initOrbitGame();
+}
 
 function triggerWin() {
     orbitState = 'won'; 
@@ -409,9 +395,9 @@ function triggerWin() {
     }, 1000);
 }
 
-window.restartOrbitFromWin = function() {
-    window.initOrbitGame();
-};
+function restartOrbitFromWin() {
+    initOrbitGame();
+}
 
 function addOrbitHistory(score, isWin) {
     let html = '';
@@ -506,25 +492,34 @@ function drawOrbit() {
     }
 }
 
-// 独立文件后，事件监听需要确保只绑定一次，并且能获取到 currentGame 状态
-window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        // 如果当前是星轨穿梭界面，并且状态是 playing，则触发跳跃
-        // 注意：这里使用 window.currentGame，因为在 main.js 里是用 let 声明的（但在浏览器全局作用域中，let 不会挂载到 window 上，需要小改一下 main.js 或者在此处检查）
-        if (document.getElementById('screen-orbit').classList.contains('active') && orbitState === 'playing') {
-            e.preventDefault(); 
-            jump();
+// 所有事件绑定在 DOMContentLoaded 之后进行
+document.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            if (document.getElementById('screen-orbit').classList.contains('active') && orbitState === 'playing') {
+                e.preventDefault(); 
+                jump();
+            }
         }
-    }
-});
+    });
+    canvas.addEventListener('mousedown', () => { 
+        if (document.getElementById('screen-orbit').classList.contains('active') && orbitState === 'playing') jump(); 
+    });
+    canvas.addEventListener('touchstart', (e) => { 
+        if (document.getElementById('screen-orbit').classList.contains('active') && orbitState === 'playing') { 
+            e.preventDefault(); jump(); 
+        } 
+    });
 
-canvas.addEventListener('mousedown', () => { 
-    if (document.getElementById('screen-orbit').classList.contains('active') && orbitState === 'playing') jump(); 
+    // 难度选择器样式绑定
+    const diffLabels = document.querySelectorAll('.diff-option');
+    diffLabels.forEach(label => {
+        label.addEventListener('click', () => {
+            diffLabels.forEach(l => l.classList.remove('selected'));
+            label.classList.add('selected');
+        });
+    });
+    
+    resizeCanvas();
 });
-canvas.addEventListener('touchstart', (e) => { 
-    if (document.getElementById('screen-orbit').classList.contains('active') && orbitState === 'playing') { 
-        e.preventDefault(); jump(); 
-    } 
-});
-
-window.onload = () => { resizeCanvas(); };
