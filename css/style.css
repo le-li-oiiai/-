@@ -1,0 +1,162 @@
+/* ==========================================
+   全局样式与主菜单
+   ========================================== */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #ffffff;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.screen { display: none; width: 100%; flex-direction: column; align-items: center; min-height: 100vh; }
+.screen.active { display: flex; }
+
+#screen-menu { justify-content: center; }
+.menu-buttons { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+.menu-btn {
+    background-color: #ffffff; border: 2px solid #3498db; color: #3498db;
+    padding: 20px 50px; font-size: 22px; border-radius: 15px; cursor: pointer;
+    transition: all 0.3s; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
+}
+.menu-btn:hover { background-color: #3498db; color: white; transform: translateY(-5px); box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3); }
+
+.back-btn { 
+    background: none; border: 1px solid #bdc3c7; color: #7f8c8d; 
+    padding: 8px 20px; border-radius: 20px; cursor: pointer; 
+    margin-top: 20px; transition: 0.2s;
+}
+.back-btn:hover { color: #333; border-color: #333; }
+
+/* ==========================================
+   扫雷游戏专属样式
+   ========================================== */
+.game-panel { background-color: #f8f9fa; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; max-width: 100%; overflow: hidden; border: 1px solid #eee; margin-top: 20px;}
+.rules { font-size: 14px; color: #7f8c8d; margin-bottom: 15px; background: #eef2f5; padding: 8px; border-radius: 5px; display: inline-block; }
+.controls, .mobile-controls { margin-bottom: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+select, button { padding: 8px 12px; font-size: 14px; border-radius: 5px; border: none; cursor: pointer; background-color: #ecf0f1; color: #333; transition: all 0.2s; border: 1px solid #ccc;}
+button:hover { background-color: #3498db; color: white; border-color: #3498db;}
+.mobile-controls button { background-color: #fff; border: 2px solid #ddd; flex: 1; max-width: 120px; }
+.mobile-controls button.active { background-color: #3498db; color: white; border-color: #2980b9; }
+.stats-bar { display: flex; justify-content: space-around; background-color: #eef2f5; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 15px; }
+.stat-value { color: #e74c3c; font-size: 18px; }
+.status-bar { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #3498db; padding: 0 10px; }
+.board-wrapper { overflow-x: auto; padding-bottom: 5px; }
+
+#game-board { display: grid; gap: 2px; background-color: #bdc3c7; padding: 5px; border-radius: 5px; margin: 0 auto; user-select: none; width: fit-content; }
+.cell { width: 30px; height: 30px; background-color: #ecf0f1; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 3px; box-shadow: inset 2px 2px 5px rgba(255,255,255,0.7), inset -2px -2px 5px rgba(0,0,0,0.1); }
+.cell:hover { background-color: #e0e6ed; }
+.cell.revealed { background-color: #d5dbdb; box-shadow: none; cursor: default; }
+.cell.mine { background-color: #e94560; color: white; }
+.cell.flag { color: #e67e22; font-size: 20px; }
+.cell[data-num="1"] { color: #2980b9; } .cell[data-num="2"] { color: #27ae60; } .cell[data-num="3"] { color: #c0392b; } .cell[data-num="4"] { color: #8e44ad; } .cell[data-num="5"] { color: #d35400; } .cell[data-num="6"] { color: #16a085; } .cell[data-num="7"] { color: #2c3e50; } .cell[data-num="8"] { color: #7f8c8d; }
+.cell.egg-animate { background-color: #f1c40f; box-shadow: 0 0 10px #f1c40f; transform: scale(1.1); transition: all 0.3s ease; }
+
+.history-panel { background-color: #f8f9fa; padding: 15px 20px; border-radius: 10px; margin-top: 20px; width: 100%; max-width: 400px; border: 1px solid #eee;}
+#history-list { list-style: none; padding: 0; margin: 0; font-size: 14px; }
+#history-list li { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+
+/* ==========================================
+   星轨穿梭 (Orbit) 专属样式
+   ========================================== */
+#screen-orbit { position: relative; width: 100%; height: 100vh; overflow: hidden; background-color: #ffffff; }
+.orbit-container { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+
+.welcome-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.welcome-overlay.active { opacity: 1; pointer-events: auto; }
+.welcome-overlay h2 { font-size: 32px; color: #333; margin-bottom: 10px; }
+.welcome-overlay p { color: #666; margin-bottom: 30px; }
+.diff-select { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center; }
+.diff-option {
+    padding: 10px 25px; border: 2px solid #eee; border-radius: 10px;
+    cursor: pointer; font-size: 18px; font-weight: bold; color: #666; transition: 0.2s;
+}
+.diff-option input { display: none; }
+.diff-option.selected { border-color: #3498db; color: #3498db; background: rgba(52, 152, 219, 0.1); }
+.start-btn {
+    padding: 15px 50px; font-size: 20px; border-radius: 30px;
+    background: #3498db; color: white; border: none; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4); transition: 0.2s;
+}
+.start-btn:hover { background: #2980b9; transform: scale(1.05); }
+
+.orbit-ui { position: absolute; top: 20px; left: 0; right: 20px; display: flex; justify-content: flex-end; pointer-events: none; z-index: 10;}
+.orbit-score-box { color: #333; background: rgba(255,255,255,0.9); padding: 8px 20px; border-radius: 20px; font-weight: bold; border: 1px solid #eee; box-shadow: 0 2px 10px rgba(0,0,0,0.05); font-size: 18px;}
+
+.orbit-sidebar {
+    position: absolute; top: 20px; left: 20px; width: 200px;
+    background: rgba(255,255,255,0.9); border: 1px solid #eee; border-radius: 10px;
+    padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); z-index: 10;
+    pointer-events: auto;
+}
+.orbit-sidebar h3 { margin: 0 0 10px 0; font-size: 16px; color: #333; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 8px;}
+.orbit-hist-list { list-style: none; padding: 0; margin: 0; font-size: 13px; max-height: 200px; overflow-y: auto; }
+.orbit-hist-list li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #f0f0f0; }
+.orbit-hist-list li:last-child { border-bottom: none; }
+.hist-win { color: #27ae60; font-weight: bold; }
+.hist-fail { color: #e74c3c; }
+.hist-endless { color: #8e44ad; font-weight: bold; }
+
+.jump-hint { 
+    color: #e74c3c; font-size: 20px; font-weight: bold; 
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    animation: pulse 1.5s infinite; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 30px; border: 1px solid #eee;
+    white-space: nowrap;
+}
+.jump-hint.show { opacity: 1; }
+@keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.05); } 100% { transform: translateX(-50%) scale(1); } }
+
+.orbit-back-btn {
+    position: absolute; top: 20px; right: 220px; z-index: 10;
+    padding: 8px 15px; border-radius: 20px; background: rgba(255,255,255,0.9);
+    border: 1px solid #ccc; color: #666; cursor: pointer;
+}
+
+.modal-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255,255,255,0.7); backdrop-filter: blur(4px);
+    display: flex; justify-content: center; align-items: center; z-index: 100;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-box {
+    background: #fff; padding: 30px 50px; border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;
+    border: 1px solid #eee; transform: translateY(20px); transition: transform 0.3s;
+}
+.modal-overlay.active .modal-box { transform: translateY(0); }
+.modal-box h2 { margin-top: 0; color: #333; }
+.modal-box p { color: #666; margin-bottom: 25px; }
+.modal-btn {
+    padding: 10px 25px; margin: 0 10px; border-radius: 8px; border: none;
+    font-size: 16px; cursor: pointer; transition: 0.2s; font-weight: bold;
+}
+.btn-primary { background: #3498db; color: white; }
+.btn-primary:hover { background: #2980b9; }
+.btn-secondary { background: #ecf0f1; color: #333; }
+.btn-secondary:hover { background: #bdc3c7; }
+
+/* ==========================================
+   移动端适配
+   ========================================== */
+@media (max-width: 600px) {
+    .cell { width: 24px; height: 24px; font-size: 14px; }
+    .cell.flag { font-size: 16px; }
+    .stats-bar { font-size: 13px; flex-direction: column; gap: 5px; }
+    .menu-btn { padding: 15px 30px; font-size: 18px; width: 80%; }
+    .orbit-sidebar { width: 140px; padding: 10px; top: 10px; left: 10px; }
+    .orbit-hist-list { font-size: 11px; }
+    .orbit-back-btn { right: 150px; top: 15px; padding: 5px 10px; font-size: 12px;}
+    .orbit-score-box { font-size: 14px; padding: 5px 15px; }
+}
