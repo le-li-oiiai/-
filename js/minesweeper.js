@@ -8,6 +8,7 @@ let ms_timerInterval = null, ms_timeElapsed = 0;
 let ms_currentMode = 'reveal';
 let ms_gameHistory = [];
 
+// 获取 DOM
 const ms_boardEl = document.getElementById('game-board');
 const ms_difficultySelect = document.getElementById('difficulty');
 const ms_restartBtn = document.getElementById('restart-btn');
@@ -19,7 +20,7 @@ const ms_btnFlag = document.getElementById('btn-flag');
 const ms_statFlags = document.getElementById('stat-flags');
 const ms_statSafe = document.getElementById('stat-safe');
 
-window.initGame = function() {
+function initGame() {
     ms_isGameOver = false; ms_isFirstClick = true; ms_revealedCount = 0; ms_flagsPlaced = 0;
     ms_stopTimer(); ms_timeElapsed = 0; ms_timeDisplay.textContent = 0;
     ms_statusText.textContent = '点击格子开始游戏'; ms_statusText.style.color = '#3498db';
@@ -46,7 +47,7 @@ window.initGame = function() {
         }
     }
     ms_updateStats();
-};
+}
 
 function ms_startTimer() {
     ms_stopTimer(); ms_timeElapsed = 0; ms_timeDisplay.textContent = ms_timeElapsed;
@@ -166,7 +167,10 @@ function ms_addHistory(resultStr, time) {
     });
 }
 
-ms_btnReveal.addEventListener('click', () => { ms_currentMode = 'reveal'; ms_btnReveal.classList.add('active'); ms_btnFlag.classList.remove('active'); });
-ms_btnFlag.addEventListener('click', () => { ms_currentMode = 'flag'; ms_btnFlag.classList.add('active'); ms_btnReveal.classList.remove('active'); });
-ms_restartBtn.addEventListener('click', window.initGame);
-ms_difficultySelect.addEventListener('change', window.initGame);
+// 事件绑定包裹在 DOMContentLoaded 中确保元素就绪
+document.addEventListener('DOMContentLoaded', () => {
+    ms_btnReveal.addEventListener('click', () => { ms_currentMode = 'reveal'; ms_btnReveal.classList.add('active'); ms_btnFlag.classList.remove('active'); });
+    ms_btnFlag.addEventListener('click', () => { ms_currentMode = 'flag'; ms_btnFlag.classList.add('active'); ms_btnReveal.classList.remove('active'); });
+    ms_restartBtn.addEventListener('click', initGame);
+    ms_difficultySelect.addEventListener('change', initGame);
+});
